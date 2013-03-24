@@ -98,6 +98,29 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
                         ]
                     }
                 ]
+            },
+            {
+                xtype: 'container',
+                title: 'Capitoli',
+                iconCls: 'info',
+                items: [
+                    {
+                        xtype: 'toolbar',
+                        docked: 'top',
+                        items: [
+                            {
+                                xtype: 'spacer'
+                            },
+                            {
+                                xtype: 'label',
+                                html: 'CAPITOLI'
+                            },
+                            {
+                                xtype: 'spacer'
+                            }
+                        ]
+                    }
+                ]
             }
         ],
         tabBar: {

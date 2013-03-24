@@ -26,7 +26,7 @@
                 ],
                 "implHandler": [
                     "this.calendarTpl = new Ext.XTemplate('<iframe src=\"https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome\" style=\" border-width:0 \" width=\"{width}\" height=\"{height}\" frameborder=\"0\" scrolling=\"no\"></iframe>');\r",
-                    ""
+                    "this.calendarTpl.compile();"
                 ]
             },
             "designerId": "55c858dc-dcd4-4c56-8fa7-47a0853d8942"
@@ -56,10 +56,11 @@
                 "designer|userClassName": "initCalendarView",
                 "fn": "initCalendarView",
                 "implHandler": [
-                    "var docWidth = document.width;\r",
-                    "var docHeight = document.height; \r",
-                    "var calendarHtml=this.calendarTpl.apply({width:docWidth -10, height:docHeight - 30});\r",
-                    "this.getCalendarView().setHtml(calendarHtml);"
+                    "var calendarView = this.getCalendarView();\r",
+                    "var viewWidth = calendarView.element.getWidth()!==0?calendarView.element.getWidth():document.width -5;\r",
+                    "var viewHeight = calendarView.element.getHeight()!==0?calendarView.element.getHeight():document.height -50; \r",
+                    "calendarHtml = this.calendarTpl.apply({width:viewWidth,height:viewHeight});\r",
+                    "calendarView.setHtml(calendarHtml);"
                 ]
             },
             "designerId": "fdb42527-cc21-42dd-9354-623e033fcfcc"

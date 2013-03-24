@@ -239,6 +239,74 @@
             ]
         },
         {
+            "type": "container",
+            "reference": {
+                "name": "items",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "title": "Capitoli",
+                "iconCls": "info",
+                "designer|userClassName": "MyContainer5"
+            },
+            "designerId": "aeb24341-602a-479f-9ab1-bf25e2587d54",
+            "cn": [
+                {
+                    "type": "toolbar",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "designer|userClassName": "MyToolbar",
+                        "docked": "top"
+                    },
+                    "designerId": "ee92f224-2c5e-4200-9709-0caf5c0e570d",
+                    "cn": [
+                        {
+                            "type": "spacer",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MySpacer"
+                            },
+                            "designerId": "ce90506d-a3a8-459e-b392-35fb70631f72"
+                        },
+                        {
+                            "type": "label",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyLabel",
+                                "html": "CAPITOLI"
+                            },
+                            "designerId": "5f09be4a-a030-41e7-94b4-80ae14bc89fe"
+                        },
+                        {
+                            "type": "spacer",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MySpacer"
+                            },
+                            "designerId": "02b0cc6d-496f-4bdc-b874-a3ee1382bbf3"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "type": "tabbar",
             "reference": {
                 "name": "tabBar",

@@ -34,14 +34,15 @@ Ext.define('ClanRainbow.controller.CalendarController', {
 
     init: function(application) {
         this.calendarTpl = new Ext.XTemplate('<iframe src="https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome" style=" border-width:0 " width="{width}" height="{height}" frameborder="0" scrolling="no"></iframe>');
-
+        this.calendarTpl.compile();
     },
 
     initCalendarView: function() {
-        var docWidth = document.width;
-        var docHeight = document.height; 
-        var calendarHtml=this.calendarTpl.apply({width:docWidth -10, height:docHeight - 30});
-        this.getCalendarView().setHtml(calendarHtml);
+        var calendarView = this.getCalendarView();
+        var viewWidth = calendarView.element.getWidth()!==0?calendarView.element.getWidth():document.width -5;
+        var viewHeight = calendarView.element.getHeight()!==0?calendarView.element.getHeight():document.height -50; 
+        calendarHtml = this.calendarTpl.apply({width:viewWidth,height:viewHeight});
+        calendarView.setHtml(calendarHtml);
     }
 
 });
