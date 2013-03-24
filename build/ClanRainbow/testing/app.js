@@ -31731,6 +31731,287 @@ Ext.define('Ext.util.Point', {
 });
 
 /**
+ * @class Ext.util.LineSegment
+ *
+ * Utility class that represents a line segment, constructed by two {@link Ext.util.Point}
+ */
+Ext.define('Ext.util.LineSegment', {
+    requires: ['Ext.util.Point'],
+
+    /**
+     * Creates new LineSegment out of two points.
+     * @param {Ext.util.Point} point1
+     * @param {Ext.util.Point} point2
+     */
+    constructor: function(point1, point2) {
+        var Point = Ext.util.Point;
+
+        this.point1 = Point.from(point1);
+        this.point2 = Point.from(point2);
+    },
+
+    /**
+     * Returns the point where two lines intersect.
+     * @param {Ext.util.LineSegment} lineSegment The line to intersect with.
+     * @return {Ext.util.Point}
+     */
+    intersects: function(lineSegment) {
+        var point1 = this.point1,
+            point2 = this.point2,
+            point3 = lineSegment.point1,
+            point4 = lineSegment.point2,
+            x1 = point1.x,
+            x2 = point2.x,
+            x3 = point3.x,
+            x4 = point4.x,
+            y1 = point1.y,
+            y2 = point2.y,
+            y3 = point3.y,
+            y4 = point4.y,
+            d = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4),
+            xi, yi;
+
+        if (d == 0) {
+            return null;
+        }
+
+        xi = ((x3 - x4) * (x1 * y2 - y1 * x2) - (x1 - x2) * (x3 * y4 - y3 * x4)) / d;
+        yi = ((y3 - y4) * (x1 * y2 - y1 * x2) - (y1 - y2) * (x3 * y4 - y3 * x4)) / d;
+
+        if (xi < Math.min(x1, x2) || xi > Math.max(x1, x2)
+            || xi < Math.min(x3, x4) || xi > Math.max(x3, x4)
+            || yi < Math.min(y1, y2) || yi > Math.max(y1, y2)
+            || yi < Math.min(y3, y4) || yi > Math.max(y3, y4)) {
+            return null;
+        }
+
+        return new Ext.util.Point(xi, yi);
+    },
+
+    /**
+     * Returns string representation of the line. Useful for debugging.
+     * @return {String} For example `Point[12,8] Point[0,0]`
+     */
+    toString: function() {
+        return this.point1.toString() + " " + this.point2.toString();
+    }
+});
+
+/**
+ * @aside guide floating_components
+ *
+ * Panels are most useful as Overlays - containers that float over your application. They contain extra styling such
+ * that when you {@link #showBy} another component, the container will appear in a rounded black box with a 'tip'
+ * pointing to a reference component.
+ *
+ * If you don't need this extra functionality, you should use {@link Ext.Container} instead. See the
+ * [Overlays example](#!/example/overlays) for more use cases.
+ *
+ *      @example miniphone preview
+ *
+ *      var button = Ext.create('Ext.Button', {
+ *           text: 'Button',
+ *           id: 'rightButton'
+ *      });
+ *
+ *      Ext.create('Ext.Container', {
+ *          fullscreen: true,
+ *          items: [
+ *              {
+ *                   docked: 'top',
+ *                   xtype: 'titlebar',
+ *                   items: [
+ *                       button
+ *                   ]
+ *               }
+ *          ]
+ *      });
+ *
+ *      Ext.create('Ext.Panel', {
+ *          html: 'Floating Panel',
+ *          left: 0,
+ *          padding: 10
+ *      }).showBy(button);
+ *
+ */
+Ext.define('Ext.Panel', {
+    extend: 'Ext.Container',
+    requires: ['Ext.util.LineSegment'],
+
+    alternateClassName: 'Ext.lib.Panel',
+
+    xtype: 'panel',
+
+    isPanel: true,
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'panel',
+
+        /**
+         * @cfg {Number/Boolean/String} bodyPadding
+         * A shortcut for setting a padding style on the body element. The value can either be
+         * a number to be applied to all sides, or a normal CSS string describing padding.
+         * @deprecated 2.0.0
+         */
+        bodyPadding: null,
+
+        /**
+         * @cfg {Number/Boolean/String} bodyMargin
+         * A shortcut for setting a margin style on the body element. The value can either be
+         * a number to be applied to all sides, or a normal CSS string describing margins.
+         * @deprecated 2.0.0
+         */
+        bodyMargin: null,
+
+        /**
+         * @cfg {Number/Boolean/String} bodyBorder
+         * A shortcut for setting a border style on the body element. The value can either be
+         * a number to be applied to all sides, or a normal CSS string describing borders.
+         * @deprecated 2.0.0
+         */
+        bodyBorder: null
+    },
+
+    getElementConfig: function() {
+        var config = this.callParent();
+
+        config.children.push({
+            reference: 'tipElement',
+            className: 'x-anchor',
+            hidden: true
+        });
+
+        return config;
+    },
+
+    applyBodyPadding: function(bodyPadding) {
+        if (bodyPadding === true) {
+            bodyPadding = 5;
+        }
+
+        if (bodyPadding) {
+            bodyPadding = Ext.dom.Element.unitizeBox(bodyPadding);
+        }
+
+        return bodyPadding;
+    },
+
+    updateBodyPadding: function(newBodyPadding) {
+        this.element.setStyle('padding', newBodyPadding);
+    },
+
+    applyBodyMargin: function(bodyMargin) {
+        if (bodyMargin === true) {
+            bodyMargin = 5;
+        }
+
+        if (bodyMargin) {
+            bodyMargin = Ext.dom.Element.unitizeBox(bodyMargin);
+        }
+
+        return bodyMargin;
+    },
+
+    updateBodyMargin: function(newBodyMargin) {
+        this.element.setStyle('margin', newBodyMargin);
+    },
+
+    applyBodyBorder: function(bodyBorder) {
+        if (bodyBorder === true) {
+            bodyBorder = 1;
+        }
+
+        if (bodyBorder) {
+            bodyBorder = Ext.dom.Element.unitizeBox(bodyBorder);
+        }
+
+        return bodyBorder;
+    },
+
+    updateBodyBorder: function(newBodyBorder) {
+        this.element.setStyle('border-width', newBodyBorder);
+    },
+
+    alignTo: function(component) {
+        var tipElement = this.tipElement;
+
+        tipElement.hide();
+
+        if (this.currentTipPosition) {
+            tipElement.removeCls('x-anchor-' + this.currentTipPosition);
+        }
+
+        this.callParent(arguments);
+
+        var LineSegment = Ext.util.LineSegment,
+            alignToElement = component.isComponent ? component.renderElement : component,
+            element = this.renderElement,
+            alignToBox = alignToElement.getPageBox(),
+            box = element.getPageBox(),
+            left = box.left,
+            top = box.top,
+            right = box.right,
+            bottom = box.bottom,
+            centerX = left + (box.width / 2),
+            centerY = top + (box.height / 2),
+            leftTopPoint = { x: left, y: top },
+            rightTopPoint = { x: right, y: top },
+            leftBottomPoint = { x: left, y: bottom },
+            rightBottomPoint = { x: right, y: bottom },
+            boxCenterPoint = { x: centerX, y: centerY },
+            alignToCenterX = alignToBox.left + (alignToBox.width / 2),
+            alignToCenterY = alignToBox.top + (alignToBox.height / 2),
+            alignToBoxCenterPoint = { x: alignToCenterX, y: alignToCenterY },
+            centerLineSegment = new LineSegment(boxCenterPoint, alignToBoxCenterPoint),
+            offsetLeft = 0,
+            offsetTop = 0,
+            tipSize, tipWidth, tipHeight, tipPosition, tipX, tipY;
+
+        tipElement.setVisibility(false);
+        tipElement.show();
+        tipSize = tipElement.getSize();
+        tipWidth = tipSize.width;
+        tipHeight = tipSize.height;
+
+        if (centerLineSegment.intersects(new LineSegment(leftTopPoint, rightTopPoint))) {
+            tipX = Math.min(Math.max(alignToCenterX, left + tipWidth), right - (tipWidth));
+            tipY = top;
+            offsetTop = tipHeight + 10;
+            tipPosition = 'top';
+        }
+        else if (centerLineSegment.intersects(new LineSegment(leftTopPoint, leftBottomPoint))) {
+            tipX = left;
+            tipY = Math.min(Math.max(alignToCenterY + (tipWidth / 2), tipWidth * 1.6), bottom - (tipWidth / 2.2));
+            offsetLeft = tipHeight + 10;
+            tipPosition = 'left';
+        }
+        else if (centerLineSegment.intersects(new LineSegment(leftBottomPoint, rightBottomPoint))) {
+            tipX = Math.min(Math.max(alignToCenterX, left + tipWidth), right - tipWidth);
+            tipY = bottom;
+            offsetTop = -tipHeight - 10;
+            tipPosition = 'bottom';
+        }
+        else if (centerLineSegment.intersects(new LineSegment(rightTopPoint, rightBottomPoint))) {
+            tipX = right;
+            tipY = Math.max(Math.min(alignToCenterY - tipHeight, bottom - tipWidth * 1.3), tipWidth / 2);
+            offsetLeft = -tipHeight - 10;
+            tipPosition = 'right';
+        }
+
+        if (tipX || tipY) {
+            this.currentTipPosition = tipPosition;
+            tipElement.addCls('x-anchor-' + tipPosition);
+            tipElement.setLeft(tipX - left);
+            tipElement.setTop(tipY - top);
+            tipElement.setVisibility(true);
+
+            this.setLeft(this.getLeft() + offsetLeft);
+            this.setTop(this.getTop() + offsetTop);
+        }
+    }
+});
+
+/**
  * A simple class to display a button in Sencha Touch.
  *
  * There are various different styles of Button you can create by using the {@link #icon},
@@ -56739,14 +57020,15 @@ Ext.define('ClanRainbow.controller.CalendarController', {
     },
 
     init: function(application) {
-        this.calendarTpl = new Ext.XTemplate('<iframe src="https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome" style=" border-width:0 " width="{width}" height="{height}" frameborder="0" scrolling="no"></iframe>');
+        //this.calendarTpl = new Ext.XTemplate('<iframe src="https://www.google.com/calendar/embed?showTitle=0&showCalendars=0&showTz=0&mode=AGENDA&height={height}&wkst=2&hl=it&bgcolor=%23FFFFFF&src=aerp8iqjgnlqgle3v4ifp0npao@group.calendar.google.com&color=%23AB8B00&src=ousovf39nb78d68aaammf5dnqk@group.calendar.google.com&color=%23A32929&src=vudfmhr89jcjtu2i3o4qfkgemk@group.calendar.google.com&color=%230D7813&ctz=Europe/Rome" style=" border-width:0 " width="{width}" height="{height}" frameborder="0" scrolling="no"></iframe>');
+        this.calendarTpl = new Ext.XTemplate('<iframe src="https://www.google.com/calendar/embed?showTitle=0&showPrint=0&showTz=0&mode=AGENDA&height={height}&wkst=1&bgcolor=%23ffffff&src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&color=%23A32929&ctz=Europe%2FRome" style=" border-width:0 " width="{width}" height="{height}" frameborder="0" scrolling="no"></iframe>');
         this.calendarTpl.compile();
     },
 
     initCalendarView: function() {
         var calendarView = this.getCalendarView();
         var viewWidth = calendarView.element.getWidth()!==0?calendarView.element.getWidth():document.width -5;
-        var viewHeight = calendarView.element.getHeight()!==0?calendarView.element.getHeight():document.height -50; 
+        var viewHeight = calendarView.element.getHeight()!==0?calendarView.element.getHeight():document.height -60; 
         calendarHtml = this.calendarTpl.apply({width:viewWidth,height:viewHeight});
         calendarView.setHtml(calendarHtml);
     }
@@ -56772,14 +57054,8 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
     extend: 'Ext.tab.Panel',
 
     config: {
+        activeItem: 3,
         items: [
-            {
-                xtype: 'container',
-                title: 'Calendario',
-                iconCls: 'time',
-                html: '<iframe src="https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome" style=" border-width:0 " frameborder="0" scrolling="no"></iframe>',
-                id: 'calendarView'
-            },
             {
                 xtype: 'container',
                 title: 'Il Clan',
@@ -56855,34 +57131,60 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
                 ]
             },
             {
-                xtype: 'tabpanel',
+                xtype: 'panel',
                 title: 'Capitolo',
                 iconCls: 'compose',
                 items: [
                     {
-                        xtype: 'container',
-                        title: 'Lavoro e Futuro'
+                        xtype: 'toolbar',
+                        docked: 'top',
+                        items: [
+                            {
+                                xtype: 'button',
+                                iconCls: 'home',
+                                iconMask: true
+                            },
+                            {
+                                xtype: 'spacer'
+                            },
+                            {
+                                xtype: 'label',
+                                html: 'Lavoro e Futuro'
+                            },
+                            {
+                                xtype: 'spacer'
+                            },
+                            {
+                                xtype: 'button',
+                                iconAlign: 'right',
+                                iconCls: 'arrow_right',
+                                iconMask: true
+                            }
+                        ]
                     },
                     {
-                        xtype: 'container',
-                        title: 'Analisi'
+                        xtype: 'container'
                     },
                     {
-                        xtype: 'container',
-                        title: 'Problematiche'
+                        xtype: 'container'
                     },
                     {
-                        xtype: 'container',
-                        title: 'Aspettative'
+                        xtype: 'container'
                     },
                     {
-                        xtype: 'container',
-                        title: 'Opportunità'
+                        xtype: 'container'
+                    },
+                    {
+                        xtype: 'container'
                     }
-                ],
-                tabBar: {
-                    docked: 'top'
-                }
+                ]
+            },
+            {
+                xtype: 'container',
+                title: 'Calendario',
+                iconCls: 'time',
+                html: '<iframe src="https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome" style=" border-width:0 " frameborder="0" scrolling="no"></iframe>',
+                id: 'calendarView'
             }
         ],
         tabBar: {

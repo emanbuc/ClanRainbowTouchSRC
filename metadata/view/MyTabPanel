@@ -6,28 +6,13 @@
     },
     "codeClass": null,
     "userConfig": {
+        "activeItem": 3,
         "designer|userClassName": "MyTabPanel",
         "designer|initialView": true
     },
     "id": "ExtBox1-ext-gen4369",
     "designerId": "2c802176-fc04-4535-a744-ab948f20486a",
     "cn": [
-        {
-            "type": "container",
-            "reference": {
-                "name": "items",
-                "type": "array"
-            },
-            "codeClass": null,
-            "userConfig": {
-                "title": "Calendario",
-                "iconCls": "time",
-                "designer|userClassName": "MyContainer1",
-                "html": "<iframe src=\"https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome\" style=\" border-width:0 \" frameborder=\"0\" scrolling=\"no\"></iframe>",
-                "id": "calendarView"
-            },
-            "designerId": "fdf5d37e-a4bb-4ce9-ad27-55cc614f38c0"
-        },
         {
             "type": "container",
             "reference": {
@@ -239,7 +224,7 @@
             ]
         },
         {
-            "type": "tabpanel",
+            "type": "panel",
             "reference": {
                 "name": "items",
                 "type": "array"
@@ -248,10 +233,93 @@
             "userConfig": {
                 "title": "Capitolo",
                 "iconCls": "compose",
-                "designer|userClassName": "MyTabPanel2"
+                "designer|userClassName": "MyPanel"
             },
             "designerId": "aeb24341-602a-479f-9ab1-bf25e2587d54",
             "cn": [
+                {
+                    "type": "toolbar",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "designer|userClassName": "MyToolbar",
+                        "docked": "top"
+                    },
+                    "designerId": "6901acf5-949b-42a1-9142-458a89e64a12",
+                    "cn": [
+                        {
+                            "type": "button",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyButton",
+                                "iconCls": "home",
+                                "iconMask": true,
+                                "text": null
+                            },
+                            "designerId": "44d33805-4b37-43a4-9314-ae440a592de6"
+                        },
+                        {
+                            "type": "spacer",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MySpacer"
+                            },
+                            "designerId": "558988d7-c774-4a4f-858f-b37949edae0d"
+                        },
+                        {
+                            "type": "label",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyLabel",
+                                "html": "Lavoro e Futuro"
+                            },
+                            "designerId": "2fa5918f-ab9f-4232-9bfc-49e08db26976"
+                        },
+                        {
+                            "type": "spacer",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MySpacer"
+                            },
+                            "designerId": "744c33e3-1068-4e62-8d77-9fad2cabafe4"
+                        },
+                        {
+                            "type": "button",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyButton1",
+                                "iconAlign": "right",
+                                "iconCls": "arrow_right",
+                                "iconMask": true,
+                                "text": null
+                            },
+                            "designerId": "2c1f501b-e3c7-4f29-a8ea-40c3b86efdf5"
+                        }
+                    ]
+                },
                 {
                     "type": "container",
                     "reference": {
@@ -260,7 +328,6 @@
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "title": "Lavoro e Futuro",
                         "designer|userClassName": "MyContainer10"
                     },
                     "designerId": "419c5fff-6cd2-40b3-bdb9-51e4730cfa54"
@@ -273,7 +340,6 @@
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "title": "Analisi",
                         "designer|userClassName": "MyContainer9"
                     },
                     "designerId": "73404d82-88c7-436b-afe2-a24870060ea3"
@@ -286,7 +352,6 @@
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "title": "Problematiche",
                         "designer|userClassName": "MyContainer6"
                     },
                     "designerId": "8664a568-bfff-4c64-af16-a21d769e8986"
@@ -299,7 +364,6 @@
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "title": "Aspettative",
                         "designer|userClassName": "MyContainer7"
                     },
                     "designerId": "47b445b7-371c-4298-8835-813f9f427b70"
@@ -312,25 +376,28 @@
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "title": "Opportunità",
                         "designer|userClassName": "MyContainer8"
                     },
                     "designerId": "8e72f2d5-74de-40fd-8a2d-e52b7dae8ed9"
-                },
-                {
-                    "type": "tabbar",
-                    "reference": {
-                        "name": "tabBar",
-                        "type": "object"
-                    },
-                    "codeClass": null,
-                    "userConfig": {
-                        "designer|userClassName": "MyTabBar",
-                        "docked": "top"
-                    },
-                    "designerId": "17d9e808-ce70-4bd9-add9-6f910b3cfc07"
                 }
             ]
+        },
+        {
+            "type": "container",
+            "reference": {
+                "name": "items",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "title": "Calendario",
+                "iconCls": "time",
+                "designer|userClassName": "MyContainer1",
+                "html": "<iframe src=\"https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome\" style=\" border-width:0 \" frameborder=\"0\" scrolling=\"no\"></iframe>",
+                "id": "calendarView",
+                "scrollable": null
+            },
+            "designerId": "fdf5d37e-a4bb-4ce9-ad27-55cc614f38c0"
         },
         {
             "type": "tabbar",

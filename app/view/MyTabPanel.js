@@ -17,14 +17,8 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
     extend: 'Ext.tab.Panel',
 
     config: {
+        activeItem: 3,
         items: [
-            {
-                xtype: 'container',
-                title: 'Calendario',
-                iconCls: 'time',
-                html: '<iframe src="https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome" style=" border-width:0 " frameborder="0" scrolling="no"></iframe>',
-                id: 'calendarView'
-            },
             {
                 xtype: 'container',
                 title: 'Il Clan',
@@ -100,34 +94,60 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
                 ]
             },
             {
-                xtype: 'tabpanel',
+                xtype: 'panel',
                 title: 'Capitolo',
                 iconCls: 'compose',
                 items: [
                     {
-                        xtype: 'container',
-                        title: 'Lavoro e Futuro'
+                        xtype: 'toolbar',
+                        docked: 'top',
+                        items: [
+                            {
+                                xtype: 'button',
+                                iconCls: 'home',
+                                iconMask: true
+                            },
+                            {
+                                xtype: 'spacer'
+                            },
+                            {
+                                xtype: 'label',
+                                html: 'Lavoro e Futuro'
+                            },
+                            {
+                                xtype: 'spacer'
+                            },
+                            {
+                                xtype: 'button',
+                                iconAlign: 'right',
+                                iconCls: 'arrow_right',
+                                iconMask: true
+                            }
+                        ]
                     },
                     {
-                        xtype: 'container',
-                        title: 'Analisi'
+                        xtype: 'container'
                     },
                     {
-                        xtype: 'container',
-                        title: 'Problematiche'
+                        xtype: 'container'
                     },
                     {
-                        xtype: 'container',
-                        title: 'Aspettative'
+                        xtype: 'container'
                     },
                     {
-                        xtype: 'container',
-                        title: 'Opportunità'
+                        xtype: 'container'
+                    },
+                    {
+                        xtype: 'container'
                     }
-                ],
-                tabBar: {
-                    docked: 'top'
-                }
+                ]
+            },
+            {
+                xtype: 'container',
+                title: 'Calendario',
+                iconCls: 'time',
+                html: '<iframe src="https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome" style=" border-width:0 " frameborder="0" scrolling="no"></iframe>',
+                id: 'calendarView'
             }
         ],
         tabBar: {

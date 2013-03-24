@@ -33,14 +33,15 @@ Ext.define('ClanRainbow.controller.CalendarController', {
     },
 
     init: function(application) {
-        this.calendarTpl = new Ext.XTemplate('<iframe src="https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome" style=" border-width:0 " width="{width}" height="{height}" frameborder="0" scrolling="no"></iframe>');
+        //this.calendarTpl = new Ext.XTemplate('<iframe src="https://www.google.com/calendar/embed?showTitle=0&showCalendars=0&showTz=0&mode=AGENDA&height={height}&wkst=2&hl=it&bgcolor=%23FFFFFF&src=aerp8iqjgnlqgle3v4ifp0npao@group.calendar.google.com&color=%23AB8B00&src=ousovf39nb78d68aaammf5dnqk@group.calendar.google.com&color=%23A32929&src=vudfmhr89jcjtu2i3o4qfkgemk@group.calendar.google.com&color=%230D7813&ctz=Europe/Rome" style=" border-width:0 " width="{width}" height="{height}" frameborder="0" scrolling="no"></iframe>');
+        this.calendarTpl = new Ext.XTemplate('<iframe src="https://www.google.com/calendar/embed?showTitle=0&showPrint=0&showTz=0&mode=AGENDA&height={height}&wkst=1&bgcolor=%23ffffff&src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&color=%23A32929&ctz=Europe%2FRome" style=" border-width:0 " width="{width}" height="{height}" frameborder="0" scrolling="no"></iframe>');
         this.calendarTpl.compile();
     },
 
     initCalendarView: function() {
         var calendarView = this.getCalendarView();
         var viewWidth = calendarView.element.getWidth()!==0?calendarView.element.getWidth():document.width -5;
-        var viewHeight = calendarView.element.getHeight()!==0?calendarView.element.getHeight():document.height -50; 
+        var viewHeight = calendarView.element.getHeight()!==0?calendarView.element.getHeight():document.height -60; 
         calendarHtml = this.calendarTpl.apply({width:viewWidth,height:viewHeight});
         calendarView.setHtml(calendarHtml);
     }
