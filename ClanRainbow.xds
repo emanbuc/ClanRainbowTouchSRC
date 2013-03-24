@@ -1,0 +1,57 @@
+{
+    "name": "ClanRainbow",
+    "settings": {
+        "urlPrefix": "",
+        "spacesToIndent": 4,
+        "exportPath": "C:/Inetpub/ClanRainbow",
+        "sdkPath": "",
+        "lineEnding": "CRLF",
+        "genTimestamps": false,
+        "cacheBust": false
+    },
+    "xdsVersion": "2.1.0",
+    "xdsBuild": 678,
+    "schemaVersion": 1,
+    "upgradeVersion": 210000000498,
+    "framework": "touch21",
+    "topInstanceFileMap": {
+        "4ad1b8c2-dfdb-4462-aa99-b99e75b094e9": {
+            "paths": [
+                "metadata/resource/Library"
+            ],
+            "className": "Library"
+        },
+        "2c802176-fc04-4535-a744-ab948f20486a": {
+            "paths": [
+                "metadata/view/MyTabPanel",
+                "app/view/override/MyTabPanel.js",
+                "app/view/MyTabPanel.js"
+            ],
+            "className": "MyTabPanel"
+        },
+        "b6a6817e-9e7e-4f3b-9a39-5b10c7aa6ec4": {
+            "paths": [
+                "metadata/controller/CalendarController",
+                "app/controller/override/CalendarController.js",
+                "app/controller/CalendarController.js"
+            ],
+            "className": "CalendarController"
+        }
+    },
+    "viewOrderMap": {
+        "view": [
+            "2c802176-fc04-4535-a744-ab948f20486a"
+        ],
+        "store": [],
+        "controller": [
+            "b6a6817e-9e7e-4f3b-9a39-5b10c7aa6ec4"
+        ],
+        "model": [],
+        "resource": [
+            "4ad1b8c2-dfdb-4462-aa99-b99e75b094e9"
+        ],
+        "app": [
+            "application"
+        ]
+    }
+}

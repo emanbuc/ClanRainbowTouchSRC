@@ -1,0 +1,255 @@
+{
+    "type": "tabpanel",
+    "reference": {
+        "name": "items",
+        "type": "array"
+    },
+    "codeClass": null,
+    "userConfig": {
+        "designer|userClassName": "MyTabPanel",
+        "designer|initialView": true
+    },
+    "id": "ExtBox1-ext-gen4369",
+    "designerId": "2c802176-fc04-4535-a744-ab948f20486a",
+    "cn": [
+        {
+            "type": "container",
+            "reference": {
+                "name": "items",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "title": "Calendario",
+                "iconCls": "time",
+                "designer|userClassName": "MyContainer1",
+                "html": "<iframe src=\"https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome\" style=\" border-width:0 \" frameborder=\"0\" scrolling=\"no\"></iframe>",
+                "id": "calendarView"
+            },
+            "designerId": "fdf5d37e-a4bb-4ce9-ad27-55cc614f38c0"
+        },
+        {
+            "type": "container",
+            "reference": {
+                "name": "items",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "title": "Il Clan",
+                "iconCls": "info",
+                "designer|userClassName": "MyContainer2",
+                "html": null,
+                "layout": "fit"
+            },
+            "designerId": "e6ac2657-339b-4e6f-be0d-487929f818a4",
+            "cn": [
+                {
+                    "type": "carousel",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "designer|userClassName": "MyCarousel"
+                    },
+                    "designerId": "17af1a26-c54f-4292-9ef2-a10b022b36ad",
+                    "cn": [
+                        {
+                            "type": "container",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyContainer3",
+                                "html": "IL CLAN PAGINA 1"
+                            },
+                            "designerId": "a410fd50-573b-4bde-b5d8-3fe08330908d"
+                        },
+                        {
+                            "type": "container",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyContainer4",
+                                "html": "IL CLAN PAGINA 2"
+                            },
+                            "designerId": "5f72c913-4e3f-48ba-984a-0158e8ad0e95"
+                        }
+                    ]
+                },
+                {
+                    "type": "toolbar",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "designer|userClassName": "MyToolbar",
+                        "docked": "top"
+                    },
+                    "designerId": "ba55d427-cb93-4693-b91e-9f677977c595",
+                    "cn": [
+                        {
+                            "type": "button",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyButton",
+                                "iconCls": "arrow_left",
+                                "iconMask": true,
+                                "text": null
+                            },
+                            "designerId": "7ed2a4c1-4674-40a9-a741-5e90f8b64ec6"
+                        },
+                        {
+                            "type": "spacer",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MySpacer"
+                            },
+                            "designerId": "996051ab-f622-44bc-b559-7df00c0db046"
+                        },
+                        {
+                            "type": "label",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyLabel",
+                                "html": "IL CLAN"
+                            },
+                            "designerId": "5c65ebc7-f967-45c9-82e1-05d674de014a"
+                        },
+                        {
+                            "type": "spacer",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MySpacer"
+                            },
+                            "designerId": "894df24a-78c1-48d3-9a0b-c74fa9f9fbdd"
+                        },
+                        {
+                            "type": "button",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyButton1",
+                                "iconAlign": "right",
+                                "iconCls": "arrow_right",
+                                "iconMask": true,
+                                "text": null
+                            },
+                            "designerId": "849c54ed-96de-4e73-affc-d15242b0f666"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "container",
+            "reference": {
+                "name": "items",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "title": "Carta di Clan",
+                "iconCls": "bookmarks",
+                "designer|userClassName": "MyContainer",
+                "html": "carta di clan"
+            },
+            "designerId": "d4d90e4f-3396-4905-9db2-ff4716839080",
+            "cn": [
+                {
+                    "type": "toolbar",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "designer|userClassName": "MyToolbar",
+                        "docked": "top"
+                    },
+                    "designerId": "40bd7f56-2ac4-4ac6-8eb1-867a1c17194a",
+                    "cn": [
+                        {
+                            "type": "spacer",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MySpacer"
+                            },
+                            "designerId": "25009709-cb94-48b6-a946-40b94fbf0a66"
+                        },
+                        {
+                            "type": "label",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MyLabel",
+                                "html": "CARTA DI CLAN"
+                            },
+                            "designerId": "2434fd26-73f8-43ae-b0e0-feaee948095f"
+                        },
+                        {
+                            "type": "spacer",
+                            "reference": {
+                                "name": "items",
+                                "type": "array"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "MySpacer"
+                            },
+                            "designerId": "e908bcfa-d2dd-442f-bd6d-1efddb95f812"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "tabbar",
+            "reference": {
+                "name": "tabBar",
+                "type": "object"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "designer|userClassName": "MyTabBar",
+                "docked": "bottom"
+            },
+            "designerId": "352d7304-f505-4854-bf11-89add20b69ae"
+        }
+    ]
+}

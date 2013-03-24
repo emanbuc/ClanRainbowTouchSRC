@@ -1,0 +1,42 @@
+{
+    "type": "application",
+    "reference": {
+        "name": "items",
+        "type": "array"
+    },
+    "codeClass": null,
+    "userConfig": {
+        "requires": [
+            "Ext.carousel.Carousel",
+            "Ext.Label"
+        ],
+        "views": [
+            "MyTabPanel"
+        ],
+        "name": "ClanRainbow",
+        "controllers": [
+            "CalendarController"
+        ]
+    },
+    "id": "ExtBox1-ext-gen1580",
+    "designerId": "application",
+    "cn": [
+        {
+            "type": "fixedfunction",
+            "reference": {
+                "name": "items",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "designer|userClassName": "launch",
+                "fn": "launch",
+                "implHandler": [
+                    "//this.getController('CalendarController').initCalendarView();\r",
+                    ""
+                ]
+            },
+            "designerId": "20ddd264-4c06-4615-97db-116f87c982c3"
+        }
+    ]
+}
