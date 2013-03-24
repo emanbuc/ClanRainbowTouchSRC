@@ -37,7 +37,7 @@
             "codeClass": null,
             "userConfig": {
                 "title": "Il Clan",
-                "iconCls": "info",
+                "iconCls": "team",
                 "designer|userClassName": "MyContainer2",
                 "html": null,
                 "layout": "fit"
@@ -239,70 +239,96 @@
             ]
         },
         {
-            "type": "container",
+            "type": "tabpanel",
             "reference": {
                 "name": "items",
                 "type": "array"
             },
             "codeClass": null,
             "userConfig": {
-                "title": "Capitoli",
-                "iconCls": "info",
-                "designer|userClassName": "MyContainer5"
+                "title": "Capitolo",
+                "iconCls": "compose",
+                "designer|userClassName": "MyTabPanel2"
             },
             "designerId": "aeb24341-602a-479f-9ab1-bf25e2587d54",
             "cn": [
                 {
-                    "type": "toolbar",
+                    "type": "container",
                     "reference": {
                         "name": "items",
                         "type": "array"
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "designer|userClassName": "MyToolbar",
+                        "title": "Lavoro e Futuro",
+                        "designer|userClassName": "MyContainer10"
+                    },
+                    "designerId": "419c5fff-6cd2-40b3-bdb9-51e4730cfa54"
+                },
+                {
+                    "type": "container",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "title": "Analisi",
+                        "designer|userClassName": "MyContainer9"
+                    },
+                    "designerId": "73404d82-88c7-436b-afe2-a24870060ea3"
+                },
+                {
+                    "type": "container",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "title": "Problematiche",
+                        "designer|userClassName": "MyContainer6"
+                    },
+                    "designerId": "8664a568-bfff-4c64-af16-a21d769e8986"
+                },
+                {
+                    "type": "container",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "title": "Aspettative",
+                        "designer|userClassName": "MyContainer7"
+                    },
+                    "designerId": "47b445b7-371c-4298-8835-813f9f427b70"
+                },
+                {
+                    "type": "container",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "title": "Opportunità",
+                        "designer|userClassName": "MyContainer8"
+                    },
+                    "designerId": "8e72f2d5-74de-40fd-8a2d-e52b7dae8ed9"
+                },
+                {
+                    "type": "tabbar",
+                    "reference": {
+                        "name": "tabBar",
+                        "type": "object"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "designer|userClassName": "MyTabBar",
                         "docked": "top"
                     },
-                    "designerId": "ee92f224-2c5e-4200-9709-0caf5c0e570d",
-                    "cn": [
-                        {
-                            "type": "spacer",
-                            "reference": {
-                                "name": "items",
-                                "type": "array"
-                            },
-                            "codeClass": null,
-                            "userConfig": {
-                                "designer|userClassName": "MySpacer"
-                            },
-                            "designerId": "ce90506d-a3a8-459e-b392-35fb70631f72"
-                        },
-                        {
-                            "type": "label",
-                            "reference": {
-                                "name": "items",
-                                "type": "array"
-                            },
-                            "codeClass": null,
-                            "userConfig": {
-                                "designer|userClassName": "MyLabel",
-                                "html": "CAPITOLI"
-                            },
-                            "designerId": "5f09be4a-a030-41e7-94b4-80ae14bc89fe"
-                        },
-                        {
-                            "type": "spacer",
-                            "reference": {
-                                "name": "items",
-                                "type": "array"
-                            },
-                            "codeClass": null,
-                            "userConfig": {
-                                "designer|userClassName": "MySpacer"
-                            },
-                            "designerId": "02b0cc6d-496f-4bdc-b874-a3ee1382bbf3"
-                        }
-                    ]
+                    "designerId": "17d9e808-ce70-4bd9-add9-6f910b3cfc07"
                 }
             ]
         },

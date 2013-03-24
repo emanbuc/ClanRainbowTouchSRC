@@ -56783,7 +56783,7 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
             {
                 xtype: 'container',
                 title: 'Il Clan',
-                iconCls: 'info',
+                iconCls: 'team',
                 layout: {
                     type: 'fit'
                 },
@@ -56855,27 +56855,34 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
                 ]
             },
             {
-                xtype: 'container',
-                title: 'Capitoli',
-                iconCls: 'info',
+                xtype: 'tabpanel',
+                title: 'Capitolo',
+                iconCls: 'compose',
                 items: [
                     {
-                        xtype: 'toolbar',
-                        docked: 'top',
-                        items: [
-                            {
-                                xtype: 'spacer'
-                            },
-                            {
-                                xtype: 'label',
-                                html: 'CAPITOLI'
-                            },
-                            {
-                                xtype: 'spacer'
-                            }
-                        ]
+                        xtype: 'container',
+                        title: 'Lavoro e Futuro'
+                    },
+                    {
+                        xtype: 'container',
+                        title: 'Analisi'
+                    },
+                    {
+                        xtype: 'container',
+                        title: 'Problematiche'
+                    },
+                    {
+                        xtype: 'container',
+                        title: 'Aspettative'
+                    },
+                    {
+                        xtype: 'container',
+                        title: 'Opportunità'
                     }
-                ]
+                ],
+                tabBar: {
+                    docked: 'top'
+                }
             }
         ],
         tabBar: {
