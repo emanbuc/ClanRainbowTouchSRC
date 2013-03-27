@@ -1,0 +1,27 @@
+[6492:7592:0327/140155:16473861:ERROR:cache_util_win.cc(43)] Unable to move the cache: 5
+[6492:7592:0327/140155:16473861:ERROR:backend_impl.cc(134)] Unable to move cache folder C:\Users\EBO\AppData\Local\Sencha\Sencha Architect 2.2\Cache to C:\Users\EBO\AppData\Local\Sencha\Sencha Architect 2.2\old_Cache_000
+[6492:7592:0327/140155:16473908:ERROR:backend_impl.cc(221)] Unable to create cache
+[6492:6648:0327/140155:16474033:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140155:16474797:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140156:16474844:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140239:16518384:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140240:16518977:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140240:16518977:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140240:16519367:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140240:16519429:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7748:0327/140240:16519429:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140240:16519429:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12005
+[6492:6348:0327/140240:16519429:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140241:16520724:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140242:16520958:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140242:16520989:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7748:0327/140242:16520989:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140249:16528461:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140251:16530521:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140303:16541924:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140359:16597897:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140539:16698378:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140556:16715491:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140612:16731372:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140620:16738860:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006
+[6492:7892:0327/140634:16753321:ERROR:proxy_resolver_winhttp.cc(94)] WinHttpGetProxyForUrl failed: 12006

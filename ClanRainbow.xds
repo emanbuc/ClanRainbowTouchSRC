@@ -9,10 +9,10 @@
         "genTimestamps": false,
         "cacheBust": false
     },
-    "xdsVersion": "2.1.0",
-    "xdsBuild": 678,
+    "xdsVersion": "2.2.0",
+    "xdsBuild": 908,
     "schemaVersion": 1,
-    "upgradeVersion": 210000000498,
+    "upgradeVersion": 210000000499,
     "framework": "touch21",
     "topInstanceFileMap": {
         "4ad1b8c2-dfdb-4462-aa99-b99e75b094e9": {
@@ -36,17 +36,37 @@
                 "app/controller/CalendarController.js"
             ],
             "className": "CalendarController"
+        },
+        "098353bd-9536-4f87-9896-4746c4fdddca": {
+            "paths": [
+                "metadata/store/EventStore",
+                "app/store/override/EventStore.js",
+                "app/store/EventStore.js"
+            ],
+            "className": "EventStore"
+        },
+        "bd282045-4b13-4cb1-a65c-1406ab778e86": {
+            "paths": [
+                "metadata/model/Event",
+                "app/model/override/Event.js",
+                "app/model/Event.js"
+            ],
+            "className": "Event"
         }
     },
     "viewOrderMap": {
         "view": [
             "2c802176-fc04-4535-a744-ab948f20486a"
         ],
-        "store": [],
+        "store": [
+            "098353bd-9536-4f87-9896-4746c4fdddca"
+        ],
         "controller": [
             "b6a6817e-9e7e-4f3b-9a39-5b10c7aa6ec4"
         ],
-        "model": [],
+        "model": [
+            "bd282045-4b13-4cb1-a65c-1406ab778e86"
+        ],
         "resource": [
             "4ad1b8c2-dfdb-4462-aa99-b99e75b094e9"
         ],

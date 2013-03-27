@@ -40155,6 +40155,2326 @@ Ext.define('Ext.data.StoreManager', {
 });
 
 /**
+ * A DataItem is a container for {@link Ext.dataview.DataView} with useComponents: true. It ties together
+ * {@link Ext.data.Model records} to its contained Components via a {@link #dataMap dataMap} configuration.
+ *
+ * For example, lets say you have a `text` configuration which, when applied, gets turned into an instance of an
+ * Ext.Component. We want to update the {@link #html} of a sub-component when the 'text' field of the record gets
+ * changed.
+ *
+ * As you can see below, it is simply a matter of setting the key of the object to be the getter of the config
+ * (getText), and then give that property a value of an object, which then has 'setHtml' (the html setter) as the key,
+ * and 'text' (the field name) as the value. You can continue this for a as many sub-components as you wish.
+ *
+ *     dataMap: {
+ *         // When the record is updated, get the text configuration, and
+ *         // call {@link #setHtml} with the 'text' field of the record.
+ *         getText: {
+ *             setHtml: 'text'
+ *         },
+ *
+ *         // When the record is updated, get the userName configuration, and
+ *         // call {@link #setHtml} with the 'from_user' field of the record.
+ *         getUserName: {
+ *             setHtml: 'from_user'
+ *         },
+ *
+ *         // When the record is updated, get the avatar configuration, and
+ *         // call `setSrc` with the 'profile_image_url' field of the record.
+ *         getAvatar: {
+ *             setSrc: 'profile_image_url'
+ *         }
+ *     }
+ */
+
+Ext.define('Ext.dataview.component.DataItem', {
+    extend: 'Ext.Container',
+    xtype : 'dataitem',
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'data-item',
+
+        defaultType: 'component',
+
+        /**
+         * @cfg {Ext.data.Model} record The model instance of this DataItem. It is controlled by the Component DataView.
+         * @accessor
+         */
+        record: null,
+
+        /**
+         * @cfg {String} itemCls
+         * An additional CSS class to apply to items within the DataView.
+         * @accessor
+         */
+        itemCls: null,
+
+        /**
+         * @cfg dataMap
+         * The dataMap allows you to map {@link #record} fields to specific configurations in this component.
+         *
+         * For example, lets say you have a `text` configuration which, when applied, gets turned into an instance of an Ext.Component.
+         * We want to update the {@link #html} of this component when the 'text' field of the record gets changed.
+         * For example:
+         *
+         *      dataMap: {
+         *          getText: {
+         *              setHtml: 'text'
+         *          }
+         *      }
+         *
+         * In this example, it is simply a matter of setting the key of the object to be the getter of the config (`getText`), and then give that
+         * property a value of an object, which then has `setHtml` (the html setter) as the key, and `text` (the field name) as the value.
+         */
+        dataMap: {},
+
+        /*
+         * @private dataview
+         */
+        dataview: null,
+
+        items: [{
+            xtype: 'component'
+        }]
+    },
+
+    updateBaseCls: function(newBaseCls, oldBaseCls) {
+        var me = this;
+
+        me.callParent(arguments);
+    },
+
+    updateItemCls: function(newCls, oldCls) {
+        if (oldCls) {
+            this.removeCls(oldCls);
+        }
+        if (newCls) {
+            this.addCls(newCls);
+        }
+    },
+
+    doMapData: function(dataMap, data, item) {
+        var componentName, component, setterMap, setterName;
+
+        for (componentName in dataMap) {
+            setterMap = dataMap[componentName];
+            component = this[componentName]();
+            if (component) {
+                for (setterName in setterMap) {
+                    if (data && component[setterName] && data[setterMap[setterName]]) {
+                        component[setterName](data[setterMap[setterName]]);
+                    }
+                }
+            }
+        }
+
+        if (item) {
+            // Bypassing setter because sometimes we pass the same object (different properties)
+            item.updateData(data);
+        }
+    },
+
+    /**
+     * Updates this container's child items, passing through the `dataMap`.
+     * @param newRecord
+     * @private
+     */
+    updateRecord: function(newRecord) {
+        if (!newRecord) {
+            return;
+        }
+        this._record = newRecord;
+
+        var me = this,
+            dataview = me.dataview || this.getDataview(),
+            data = dataview.prepareData(newRecord.getData(true), dataview.getStore().indexOf(newRecord), newRecord),
+            items = me.getItems(),
+            item = items.first(),
+            dataMap = me.getDataMap();
+
+        if (!item) {
+            return;
+        }
+        if (dataMap) {
+            this.doMapData(dataMap, data, item);
+        }
+
+        /**
+         * @event updatedata
+         * Fires whenever the data of the DataItem is updated.
+         * @param {Ext.dataview.component.DataItem} this The DataItem instance.
+         * @param {Object} newData The new data.
+         */
+        me.fireEvent('updatedata', me, data);
+    }
+});
+
+/**
+ * @private
+ */
+Ext.define('Ext.dataview.component.Container', {
+    extend: 'Ext.Container',
+
+    requires: [
+        'Ext.dataview.component.DataItem'
+    ],
+
+    /**
+     * @event itemtouchstart
+     * Fires whenever an item is touched
+     * @param {Ext.dataview.component.Container} this
+     * @param {Ext.dataview.component.DataItem} item The item touched
+     * @param {Number} index The index of the item touched
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtouchmove
+     * Fires whenever an item is moved
+     * @param {Ext.dataview.component.Container} this
+     * @param {Ext.dataview.component.DataItem} item The item moved
+     * @param {Number} index The index of the item moved
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtouchend
+     * Fires whenever an item is touched
+     * @param {Ext.dataview.component.Container} this
+     * @param {Ext.dataview.component.DataItem} item The item touched
+     * @param {Number} index The index of the item touched
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtap
+     * Fires whenever an item is tapped
+     * @param {Ext.dataview.component.Container} this
+     * @param {Ext.dataview.component.DataItem} item The item tapped
+     * @param {Number} index The index of the item tapped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtaphold
+     * Fires whenever an item is tapped
+     * @param {Ext.dataview.component.Container} this
+     * @param {Ext.dataview.component.DataItem} item The item tapped
+     * @param {Number} index The index of the item tapped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemsingletap
+     * Fires whenever an item is doubletapped
+     * @param {Ext.dataview.component.Container} this
+     * @param {Ext.dataview.component.DataItem} item The item singletapped
+     * @param {Number} index The index of the item singletapped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemdoubletap
+     * Fires whenever an item is doubletapped
+     * @param {Ext.dataview.component.Container} this
+     * @param {Ext.dataview.component.DataItem} item The item doubletapped
+     * @param {Number} index The index of the item doubletapped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemswipe
+     * Fires whenever an item is swiped
+     * @param {Ext.dataview.component.Container} this
+     * @param {Ext.dataview.component.DataItem} item The item swiped
+     * @param {Number} index The index of the item swiped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    constructor: function() {
+        this.itemCache = [];
+        this.callParent(arguments);
+    },
+
+    //@private
+    doInitialize: function() {
+        this.innerElement.on({
+            touchstart: 'onItemTouchStart',
+            touchend: 'onItemTouchEnd',
+            tap: 'onItemTap',
+            taphold: 'onItemTapHold',
+            touchmove: 'onItemTouchMove',
+            singletap: 'onItemSingleTap',
+            doubletap: 'onItemDoubleTap',
+            swipe: 'onItemSwipe',
+            delegate: '> .' + Ext.baseCSSPrefix + 'data-item',
+            scope: this
+        });
+    },
+
+    //@private
+    initialize: function() {
+        this.callParent();
+        this.doInitialize();
+    },
+
+    onItemTouchStart: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            item = Ext.getCmp(target.id);
+
+        item.on({
+            touchmove: 'onItemTouchMove',
+            scope   : me,
+            single: true
+        });
+
+        me.fireEvent('itemtouchstart', me, item, me.indexOf(item), e);
+    },
+
+    onItemTouchMove: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            item = Ext.getCmp(target.id);
+        me.fireEvent('itemtouchmove', me, item, me.indexOf(item), e);
+    },
+
+    onItemTouchEnd: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            item = Ext.getCmp(target.id);
+
+        item.un({
+            touchmove: 'onItemTouchMove',
+            scope   : me
+        });
+
+        me.fireEvent('itemtouchend', me, item, me.indexOf(item), e);
+    },
+
+    onItemTap: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            item = Ext.getCmp(target.id);
+        me.fireEvent('itemtap', me, item, me.indexOf(item), e);
+    },
+
+    onItemTapHold: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            item = Ext.getCmp(target.id);
+        me.fireEvent('itemtaphold', me, item, me.indexOf(item), e);
+    },
+
+    onItemSingleTap: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            item = Ext.getCmp(target.id);
+        me.fireEvent('itemsingletap', me, item, me.indexOf(item), e);
+    },
+
+    onItemDoubleTap: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            item = Ext.getCmp(target.id);
+        me.fireEvent('itemdoubletap', me, item, me.indexOf(item), e);
+    },
+
+    onItemSwipe: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            item = Ext.getCmp(target.id);
+        me.fireEvent('itemswipe', me, item, me.indexOf(item), e);
+    },
+
+    moveItemsToCache: function(from, to) {
+        var me = this,
+            dataview = me.dataview,
+            maxItemCache = dataview.getMaxItemCache(),
+            items = me.getViewItems(),
+            itemCache = me.itemCache,
+            cacheLn = itemCache.length,
+            pressedCls = dataview.getPressedCls(),
+            selectedCls = dataview.getSelectedCls(),
+            i = to - from,
+            item;
+
+        for (; i >= 0; i--) {
+            item = items[from + i];
+            if (cacheLn !== maxItemCache) {
+                me.remove(item, false);
+                item.removeCls([pressedCls, selectedCls]);
+                itemCache.push(item);
+                cacheLn++;
+            }
+            else {
+                item.destroy();
+            }
+        }
+
+        if (me.getViewItems().length == 0) {
+            this.dataview.showEmptyText();
+        }
+    },
+
+    moveItemsFromCache: function(records) {
+        var me = this,
+            dataview = me.dataview,
+            store = dataview.getStore(),
+            ln = records.length,
+            xtype = dataview.getDefaultType(),
+            itemConfig = dataview.getItemConfig(),
+            itemCache = me.itemCache,
+            cacheLn = itemCache.length,
+            items = [],
+            i, item, record;
+
+        if (ln) {
+            dataview.hideEmptyText();
+        }
+
+        for (i = 0; i < ln; i++) {
+            records[i]._tmpIndex = store.indexOf(records[i]);
+        }
+
+        Ext.Array.sort(records, function(record1, record2) {
+            return record1._tmpIndex > record2._tmpIndex ? 1 : -1;
+        });
+
+        for (i = 0; i < ln; i++) {
+            record = records[i];
+            if (cacheLn) {
+                cacheLn--;
+                item = itemCache.pop();
+                this.updateListItem(record, item);
+            }
+            else {
+                item = me.getDataItemConfig(xtype, record, itemConfig);
+            }
+            item = this.insert(record._tmpIndex, item);
+            delete record._tmpIndex;
+        }
+        return items;
+    },
+
+    getViewItems: function() {
+        return this.getInnerItems();
+    },
+
+    updateListItem: function(record, item) {
+        if (item.updateRecord) {
+            if (item.getRecord() === record) {
+                item.updateRecord(record);
+            } else {
+                item.setRecord(record);
+            }
+        }
+    },
+
+    getDataItemConfig: function(xtype, record, itemConfig) {
+        var dataview = this.dataview,
+            dataItemConfig = {
+                xtype: xtype,
+                record: record,
+                itemCls: dataview.getItemCls(),
+                defaults: itemConfig,
+                dataview: dataview
+            };
+        return Ext.merge(dataItemConfig, itemConfig);
+    },
+
+    doRemoveItemCls: function(cls) {
+        var items = this.getViewItems(),
+            ln = items.length,
+            i = 0;
+
+        for (; i < ln; i++) {
+            items[i].removeCls(cls);
+        }
+    },
+
+    doAddItemCls: function(cls) {
+        var items = this.getViewItems(),
+            ln = items.length,
+            i = 0;
+
+        for (; i < ln; i++) {
+            items[i].addCls(cls);
+        }
+    },
+
+    updateAtNewIndex: function(oldIndex, newIndex, record) {
+        this.moveItemsToCache(oldIndex, oldIndex);
+        this.moveItemsFromCache([record]);
+    },
+
+    destroy: function() {
+        var me = this,
+            itemCache = me.itemCache,
+            ln = itemCache.length,
+            i = 0;
+
+        for (; i < ln; i++) {
+            itemCache[i].destroy();
+        }
+        this.callParent();
+    }
+});
+
+/**
+ * @private
+ */
+Ext.define('Ext.dataview.element.Container', {
+    extend: 'Ext.Component',
+
+    /**
+     * @event itemtouchstart
+     * Fires whenever an item is touched
+     * @param {Ext.dataview.element.Container} this
+     * @param {Ext.dom.Element} item The item touched
+     * @param {Number} index The index of the item touched
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtouchmove
+     * Fires whenever an item is moved
+     * @param {Ext.dataview.element.Container} this
+     * @param {Ext.dom.Element} item The item moved
+     * @param {Number} index The index of the item moved
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtouchend
+     * Fires whenever an item is touched
+     * @param {Ext.dataview.element.Container} this
+     * @param {Ext.dom.Element} item The item touched
+     * @param {Number} index The index of the item touched
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtap
+     * Fires whenever an item is tapped
+     * @param {Ext.dataview.element.Container} this
+     * @param {Ext.dom.Element} item The item tapped
+     * @param {Number} index The index of the item tapped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtaphold
+     * Fires whenever an item is tapped
+     * @param {Ext.dataview.element.Container} this
+     * @param {Ext.dom.Element} item The item tapped
+     * @param {Number} index The index of the item tapped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemsingletap
+     * Fires whenever an item is singletapped
+     * @param {Ext.dataview.element.Container} this
+     * @param {Ext.dom.Element} item The item singletapped
+     * @param {Number} index The index of the item singletapped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemdoubletap
+     * Fires whenever an item is doubletapped
+     * @param {Ext.dataview.element.Container} this
+     * @param {Ext.dom.Element} item The item doubletapped
+     * @param {Number} index The index of the item doubletapped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemswipe
+     * Fires whenever an item is swiped
+     * @param {Ext.dataview.element.Container} this
+     * @param {Ext.dom.Element} item The item swiped
+     * @param {Number} index The index of the item swiped
+     * @param {Ext.EventObject} e The event object
+     */
+
+    doInitialize: function() {
+        this.element.on({
+            touchstart: 'onItemTouchStart',
+            touchend: 'onItemTouchEnd',
+            tap: 'onItemTap',
+            taphold: 'onItemTapHold',
+            touchmove: 'onItemTouchMove',
+            singletap: 'onItemSingleTap',
+            doubletap: 'onItemDoubleTap',
+            swipe: 'onItemSwipe',
+            delegate: '> div',
+            scope: this
+        });
+    },
+
+    //@private
+    initialize: function() {
+        this.callParent();
+        this.doInitialize();
+    },
+
+    updateBaseCls: function(newBaseCls, oldBaseCls) {
+        var me = this;
+
+        me.callParent([newBaseCls + '-container', oldBaseCls]);
+    },
+
+    onItemTouchStart: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            index = me.getViewItems().indexOf(target);
+
+        Ext.get(target).on({
+            touchmove: 'onItemTouchMove',
+            scope   : me,
+            single: true
+        });
+
+        me.fireEvent('itemtouchstart', me, Ext.get(target), index, e);
+    },
+
+    onItemTouchEnd: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            index = me.getViewItems().indexOf(target);
+
+        Ext.get(target).un({
+            touchmove: 'onItemTouchMove',
+            scope   : me
+        });
+
+        me.fireEvent('itemtouchend', me, Ext.get(target), index, e);
+    },
+
+    onItemTouchMove: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            index = me.getViewItems().indexOf(target);
+
+        me.fireEvent('itemtouchmove', me, Ext.get(target), index, e);
+    },
+
+    onItemTap: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            index = me.getViewItems().indexOf(target);
+
+        me.fireEvent('itemtap', me, Ext.get(target), index, e);
+    },
+
+    onItemTapHold: function(e) {
+        var me     = this,
+            target = e.getTarget(),
+            index  = me.getViewItems().indexOf(target);
+
+        me.fireEvent('itemtaphold', me, Ext.get(target), index, e);
+    },
+
+    onItemDoubleTap: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            index = me.getViewItems().indexOf(target);
+
+        me.fireEvent('itemdoubletap', me, Ext.get(target), index, e);
+    },
+
+    onItemSingleTap: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            index = me.getViewItems().indexOf(target);
+
+        me.fireEvent('itemsingletap', me, Ext.get(target), index, e);
+    },
+
+    onItemSwipe: function(e) {
+        var me = this,
+            target = e.getTarget(),
+            index = me.getViewItems().indexOf(target);
+
+        me.fireEvent('itemswipe', me,  Ext.get(target), index, e);
+    },
+
+    updateListItem: function(record, item) {
+        var me       = this,
+            dataview = me.dataview,
+            store    = dataview.getStore(),
+            index    = store.indexOf(record),
+            data     = dataview.prepareData(record.getData(true), index, record);
+
+        data.xcount = store.getCount();
+        data.xindex = typeof data.xindex === 'number' ? data.xindex : index;
+
+        item.innerHTML = dataview.getItemTpl().apply(data);
+    },
+
+    addListItem: function(index, record) {
+        var me         = this,
+            dataview   = me.dataview,
+            store      = dataview.getStore(),
+            data       = dataview.prepareData(record.getData(true), index, record),
+            element    = me.element,
+            childNodes = element.dom.childNodes,
+            ln         = childNodes.length,
+            wrapElement;
+
+        data.xcount = typeof data.xcount === 'number' ? data.xcount : store.getCount();
+        data.xindex = typeof data.xindex === 'number' ? data.xindex : index;
+
+        wrapElement = Ext.Element.create(this.getItemElementConfig(index, data));
+
+        if (!ln || index == ln) {
+            wrapElement.appendTo(element);
+        } else {
+            wrapElement.insertBefore(childNodes[index]);
+        }
+    },
+
+    getItemElementConfig: function(index, data) {
+        var dataview = this.dataview,
+            itemCls = dataview.getItemCls(),
+            cls = dataview.getBaseCls() + '-item';
+
+        if (itemCls) {
+            cls += ' ' + itemCls;
+        }
+        return {
+            cls: cls,
+            html: dataview.getItemTpl().apply(data)
+        };
+    },
+
+    doRemoveItemCls: function(cls) {
+        var elements = this.getViewItems(),
+            ln = elements.length,
+            i = 0;
+
+        for (; i < ln; i++) {
+            Ext.fly(elements[i]).removeCls(cls);
+        }
+    },
+
+    doAddItemCls: function(cls) {
+        var elements = this.getViewItems(),
+            ln = elements.length,
+            i = 0;
+
+        for (; i < ln; i++) {
+            Ext.fly(elements[i]).addCls(cls);
+        }
+    },
+
+    // Remove
+    moveItemsToCache: function(from, to) {
+        var me = this,
+            items = me.getViewItems(),
+            i = to - from,
+            item;
+
+        for (; i >= 0; i--) {
+            item = items[from + i];
+            Ext.get(item).destroy();
+        }
+        if (me.getViewItems().length == 0) {
+            this.dataview.showEmptyText();
+        }
+    },
+
+    // Add
+    moveItemsFromCache: function(records) {
+        var me = this,
+            dataview = me.dataview,
+            store = dataview.getStore(),
+            ln = records.length,
+            i, record;
+
+        if (ln) {
+            dataview.hideEmptyText();
+        }
+
+        for (i = 0; i < ln; i++) {
+            records[i]._tmpIndex = store.indexOf(records[i]);
+        }
+
+        Ext.Array.sort(records, function(record1, record2) {
+            return record1._tmpIndex > record2._tmpIndex ? 1 : -1;
+        });
+
+        for (i = 0; i < ln; i++) {
+            record = records[i];
+            me.addListItem(record._tmpIndex, record);
+            delete record._tmpIndex;
+        }
+    },
+
+    // Transform ChildNodes into a proper Array so we can do indexOf...
+    getViewItems: function() {
+        return Array.prototype.slice.call(this.element.dom.childNodes);
+    },
+
+    updateAtNewIndex: function(oldIndex, newIndex, record) {
+        this.moveItemsToCache(oldIndex, oldIndex);
+        this.moveItemsFromCache([record]);
+    },
+
+    destroy: function() {
+        var elements = this.getViewItems(),
+            ln = elements.length,
+            i = 0;
+
+        for (; i < ln; i++) {
+            Ext.get(elements[i]).destroy();
+        }
+        this.callParent();
+    }
+});
+
+/**
+ * Tracks what records are currently selected in a databound widget. This class is mixed in to {@link Ext.dataview.DataView} and
+ * all subclasses.
+ * @private
+ */
+Ext.define('Ext.mixin.Selectable', {
+    extend: 'Ext.mixin.Mixin',
+
+    mixinConfig: {
+        id: 'selectable',
+        hooks: {
+            updateStore: 'updateStore'
+        }
+    },
+
+    /**
+     * @event beforeselectionchange
+     * Fires before an item is selected.
+     * @param {Ext.mixin.Selectable} this
+     * @preventable selectionchange
+     * @deprecated 2.0.0 Please listen to the {@link #selectionchange} event with an order of `before` instead.
+     */
+
+    /**
+     * @event selectionchange
+     * Fires when a selection changes.
+     * @param {Ext.mixin.Selectable} this
+     * @param {Ext.data.Model[]} records The records whose selection has changed.
+     */
+
+    config: {
+        /**
+         * @cfg {Boolean} disableSelection `true` to disable selection.
+         * This configuration will lock the selection model that the DataView uses.
+         * @accessor
+         */
+        disableSelection: null,
+
+        /**
+         * @cfg {String} mode
+         * Modes of selection.
+         * Valid values are `'SINGLE'`, `'SIMPLE'`, and `'MULTI'`.
+         * @accessor
+         */
+        mode: 'SINGLE',
+
+        /**
+         * @cfg {Boolean} allowDeselect
+         * Allow users to deselect a record in a DataView, List or Grid. Only applicable when the Selectable's `mode` is
+         * `'SINGLE'`.
+         * @accessor
+         */
+        allowDeselect: false,
+
+        /**
+         * @cfg {Ext.data.Model} lastSelected
+         * @private
+         * @accessor
+         */
+        lastSelected: null,
+
+        /**
+         * @cfg {Ext.data.Model} lastFocused
+         * @private
+         * @accessor
+         */
+        lastFocused: null,
+
+        /**
+         * @cfg {Boolean} deselectOnContainerClick `true` to deselect current selection when the container body is
+         * clicked.
+         * @accessor
+         */
+        deselectOnContainerClick: true
+    },
+
+    modes: {
+        SINGLE: true,
+        SIMPLE: true,
+        MULTI: true
+    },
+
+    selectableEventHooks: {
+        addrecords: 'onSelectionStoreAdd',
+        removerecords: 'onSelectionStoreRemove',
+        updaterecord: 'onSelectionStoreUpdate',
+        load: 'refreshSelection',
+        refresh: 'refreshSelection'
+    },
+
+    constructor: function() {
+        this.selected = new Ext.util.MixedCollection();
+        this.callParent(arguments);
+    },
+
+    /**
+     * @private
+     */
+    applyMode: function(mode) {
+        mode = mode ? mode.toUpperCase() : 'SINGLE';
+        // set to mode specified unless it doesnt exist, in that case
+        // use single.
+        return this.modes[mode] ? mode : 'SINGLE';
+    },
+
+    /**
+     * @private
+     */
+    updateStore: function(newStore, oldStore) {
+        var me = this,
+            bindEvents = Ext.apply({}, me.selectableEventHooks, { scope: me });
+
+        if (oldStore && Ext.isObject(oldStore) && oldStore.isStore) {
+            if (oldStore.autoDestroy) {
+                oldStore.destroy();
+            }
+            else {
+                oldStore.un(bindEvents);
+                newStore.un('clear', 'onSelectionStoreClear', this);
+            }
+        }
+
+        if (newStore) {
+            newStore.on(bindEvents);
+            newStore.onBefore('clear', 'onSelectionStoreClear', this);
+            me.refreshSelection();
+        }
+    },
+
+    /**
+     * Selects all records.
+     * @param {Boolean} silent `true` to suppress all select events.
+     */
+    selectAll: function(silent) {
+        var me = this,
+            selections = me.getStore().getRange(),
+            ln = selections.length,
+            i = 0;
+        for (; i < ln; i++) {
+            me.select(selections[i], true, silent);
+        }
+    },
+
+    /**
+     * Deselects all records.
+     */
+    deselectAll: function(supress) {
+        var me = this,
+            selections = me.getStore().getRange();
+
+        me.deselect(selections, supress);
+
+        me.selected.clear();
+        me.setLastSelected(null);
+        me.setLastFocused(null);
+    },
+
+    // Provides differentiation of logic between MULTI, SIMPLE and SINGLE
+    // selection modes.
+    selectWithEvent: function(record) {
+        var me = this,
+            isSelected = me.isSelected(record);
+        switch (me.getMode()) {
+            case 'MULTI':
+            case 'SIMPLE':
+                if (isSelected) {
+                    me.deselect(record);
+                }
+                else {
+                    me.select(record, true);
+                }
+                break;
+            case 'SINGLE':
+                if (me.getAllowDeselect() && isSelected) {
+                    // if allowDeselect is on and this record isSelected, deselect it
+                    me.deselect(record);
+                } else {
+                    // select the record and do NOT maintain existing selections
+                    me.select(record, false);
+                }
+                break;
+        }
+    },
+
+    /**
+     * Selects a range of rows if the selection model {@link Ext.mixin.Selectable#getDisableSelection} is not locked.
+     * All rows in between `startRow` and `endRow` are also selected.
+     * @param {Number} startRow The index of the first row in the range.
+     * @param {Number} endRow The index of the last row in the range.
+     * @param {Boolean} keepExisting (optional) `true` to retain existing selections.
+     */
+    selectRange: function(startRecord, endRecord, keepExisting) {
+        var me = this,
+            store = me.getStore(),
+            records = [],
+            tmp, i;
+
+        if (me.getDisableSelection()) {
+            return;
+        }
+
+        // swap values
+        if (startRecord > endRecord) {
+            tmp = endRecord;
+            endRecord = startRecord;
+            startRecord = tmp;
+        }
+
+        for (i = startRecord; i <= endRecord; i++) {
+            records.push(store.getAt(i));
+        }
+        this.doMultiSelect(records, keepExisting);
+    },
+
+    /**
+     * Adds the given records to the currently selected set.
+     * @param {Ext.data.Model/Array/Number} records The records to select.
+     * @param {Boolean} keepExisting If `true`, the existing selection will be added to (if not, the old selection is replaced).
+     * @param {Boolean} suppressEvent If `true`, the `select` event will not be fired.
+     */
+    select: function(records, keepExisting, suppressEvent) {
+        var me = this,
+            record;
+
+        if (me.getDisableSelection()) {
+            return;
+        }
+
+        if (typeof records === "number") {
+            records = [me.getStore().getAt(records)];
+        }
+
+        if (!records) {
+            return;
+        }
+
+        if (me.getMode() == "SINGLE" && records) {
+            record = records.length ? records[0] : records;
+            me.doSingleSelect(record, suppressEvent);
+        } else {
+            me.doMultiSelect(records, keepExisting, suppressEvent);
+        }
+    },
+
+    /**
+     * Selects a single record.
+     * @private
+     */
+    doSingleSelect: function(record, suppressEvent) {
+        var me = this,
+            selected = me.selected;
+
+        if (me.getDisableSelection()) {
+            return;
+        }
+
+        // already selected.
+        // should we also check beforeselect?
+        if (me.isSelected(record)) {
+            return;
+        }
+
+        if (selected.getCount() > 0) {
+            me.deselect(me.getLastSelected(), suppressEvent);
+        }
+
+        selected.add(record);
+        me.setLastSelected(record);
+        me.onItemSelect(record, suppressEvent);
+        me.setLastFocused(record);
+
+        if (!suppressEvent) {
+            me.fireSelectionChange([record]);
+        }
+    },
+
+    /**
+     * Selects a set of multiple records.
+     * @private
+     */
+    doMultiSelect: function(records, keepExisting, suppressEvent) {
+        if (records === null || this.getDisableSelection()) {
+            return;
+        }
+        records = !Ext.isArray(records) ? [records] : records;
+
+        var me = this,
+            selected = me.selected,
+            ln = records.length,
+            change = false,
+            i = 0,
+            record;
+
+        if (!keepExisting && selected.getCount() > 0) {
+            change = true;
+            me.deselect(me.getSelection(), true);
+        }
+        for (; i < ln; i++) {
+            record = records[i];
+            if (keepExisting && me.isSelected(record)) {
+                continue;
+            }
+            change = true;
+            me.setLastSelected(record);
+            selected.add(record);
+            if (!suppressEvent) {
+                me.setLastFocused(record);
+            }
+
+            me.onItemSelect(record, suppressEvent);
+        }
+        if (change && !suppressEvent) {
+            this.fireSelectionChange(records);
+        }
+    },
+
+    /**
+     * Deselects the given record(s). If many records are currently selected, it will only deselect those you pass in.
+     * @param {Number/Array/Ext.data.Model} records The record(s) to deselect. Can also be a number to reference by index.
+     * @param {Boolean} suppressEvent If `true` the `deselect` event will not be fired.
+     */
+    deselect: function(records, suppressEvent) {
+        var me = this;
+
+        if (me.getDisableSelection()) {
+            return;
+        }
+
+        records = Ext.isArray(records) ? records : [records];
+
+        var selected = me.selected,
+            change   = false,
+            i        = 0,
+            store    = me.getStore(),
+            ln       = records.length,
+            record;
+
+        for (; i < ln; i++) {
+            record = records[i];
+
+            if (typeof record === 'number') {
+                record = store.getAt(record);
+            }
+
+            if (selected.remove(record)) {
+                if (me.getLastSelected() == record) {
+                    me.setLastSelected(selected.last());
+                }
+                change = true;
+            }
+            if (record) {
+                me.onItemDeselect(record, suppressEvent);
+            }
+        }
+
+        if (change && !suppressEvent) {
+            me.fireSelectionChange(records);
+        }
+    },
+
+    /**
+     * Sets a record as the last focused record. This does NOT mean
+     * that the record has been selected.
+     * @param {Ext.data.Record} newRecord
+     * @param {Ext.data.Record} oldRecord
+     */
+    updateLastFocused: function(newRecord, oldRecord) {
+        this.onLastFocusChanged(oldRecord, newRecord);
+    },
+
+    fireSelectionChange: function(records) {
+        var me = this;
+            me.fireAction('selectionchange', [me, records], 'getSelection');
+    },
+
+    /**
+     * Returns an array of the currently selected records.
+     * @return {Array} An array of selected records.
+     */
+    getSelection: function() {
+        return this.selected.getRange();
+    },
+
+    /**
+     * Returns `true` if the specified row is selected.
+     * @param {Ext.data.Model/Number} record The record or index of the record to check.
+     * @return {Boolean}
+     */
+    isSelected: function(record) {
+        record = Ext.isNumber(record) ? this.getStore().getAt(record) : record;
+        return this.selected.indexOf(record) !== -1;
+    },
+
+    /**
+     * Returns `true` if there is a selected record.
+     * @return {Boolean}
+     */
+    hasSelection: function() {
+        return this.selected.getCount() > 0;
+    },
+
+    /**
+     * @private
+     */
+    refreshSelection: function() {
+        var me = this,
+            selections = me.getSelection();
+
+        me.deselectAll(true);
+        if (selections.length) {
+            me.select(selections, false, true);
+        }
+    },
+
+    // prune records from the SelectionModel if
+    // they were selected at the time they were
+    // removed.
+    onSelectionStoreRemove: function(store, records) {
+        var me = this,
+            selected = me.selected,
+            ln = records.length,
+            record, i;
+
+        if (me.getDisableSelection()) {
+            return;
+        }
+
+        for (i = 0; i < ln; i++) {
+            record = records[i];
+            if (selected.remove(record)) {
+                if (me.getLastSelected() == record) {
+                    me.setLastSelected(null);
+                }
+                if (me.getLastFocused() == record) {
+                    me.setLastFocused(null);
+                }
+                me.fireSelectionChange([record]);
+            }
+        }
+    },
+
+    onSelectionStoreClear: function(store) {
+        var records = store.getData().items;
+        this.onSelectionStoreRemove(store, records);
+    },
+
+    /**
+     * Returns the number of selections.
+     * @return {Number}
+     */
+    getSelectionCount: function() {
+        return this.selected.getCount();
+    },
+
+    onSelectionStoreAdd: Ext.emptyFn,
+    onSelectionStoreUpdate: Ext.emptyFn,
+    onItemSelect: Ext.emptyFn,
+    onItemDeselect: Ext.emptyFn,
+    onLastFocusChanged: Ext.emptyFn,
+    onEditorKey: Ext.emptyFn
+}, function() {
+    /**
+     * Selects a record instance by record instance or index.
+     * @member Ext.mixin.Selectable
+     * @method doSelect
+     * @param {Ext.data.Model/Number} records An array of records or an index.
+     * @param {Boolean} keepExisting
+     * @param {Boolean} suppressEvent Set to `false` to not fire a select event.
+     * @deprecated 2.0.0 Please use {@link #select} instead.
+     */
+
+    /**
+     * Deselects a record instance by record instance or index.
+     * @member Ext.mixin.Selectable
+     * @method doDeselect
+     * @param {Ext.data.Model/Number} records An array of records or an index.
+     * @param {Boolean} suppressEvent Set to `false` to not fire a deselect event.
+     * @deprecated 2.0.0 Please use {@link #deselect} instead.
+     */
+
+    /**
+     * Returns the selection mode currently used by this Selectable.
+     * @member Ext.mixin.Selectable
+     * @method getSelectionMode
+     * @return {String} The current mode.
+     * @deprecated 2.0.0 Please use {@link #getMode} instead.
+     */
+
+    /**
+     * Returns the array of previously selected items.
+     * @member Ext.mixin.Selectable
+     * @method getLastSelected
+     * @return {Array} The previous selection.
+     * @deprecated 2.0.0
+     */
+
+    /**
+     * Returns `true` if the Selectable is currently locked.
+     * @member Ext.mixin.Selectable
+     * @method isLocked
+     * @return {Boolean} True if currently locked
+     * @deprecated 2.0.0 Please use {@link #getDisableSelection} instead.
+     */
+
+    /**
+     * This was an internal function accidentally exposed in 1.x and now deprecated. Calling it has no effect
+     * @member Ext.mixin.Selectable
+     * @method setLastFocused
+     * @deprecated 2.0.0
+     */
+
+    /**
+     * Deselects any currently selected records and clears all stored selections.
+     * @member Ext.mixin.Selectable
+     * @method clearSelections
+     * @deprecated 2.0.0 Please use {@link #deselectAll} instead.
+     */
+
+    /**
+     * Returns the number of selections.
+     * @member Ext.mixin.Selectable
+     * @method getCount
+     * @return {Number}
+     * @deprecated 2.0.0 Please use {@link #getSelectionCount} instead.
+     */
+
+    /**
+     * @cfg {Boolean} locked
+     * @inheritdoc Ext.mixin.Selectable#disableSelection
+     * @deprecated 2.0.0 Please use {@link #disableSelection} instead.
+     */
+});
+
+/**
+ * @aside guide dataview
+ *
+ * DataView makes it easy to create lots of components dynamically, usually based off a {@link Ext.data.Store Store}.
+ * It's great for rendering lots of data from your server backend or any other data source and is what powers
+ * components like {@link Ext.List}.
+ *
+ * Use DataView whenever you want to show sets of the same component many times, for examples in apps like these:
+ *
+ * - List of messages in an email app
+ * - Showing latest news/tweets
+ * - Tiled set of albums in an HTML5 music player
+ *
+ * # Creating a Simple DataView
+ *
+ * At its simplest, a DataView is just a Store full of data and a simple template that we use to render each item:
+ *
+ *     @example miniphone preview
+ *     var touchTeam = Ext.create('Ext.DataView', {
+ *         fullscreen: true,
+ *         store: {
+ *             fields: ['name', 'age'],
+ *             data: [
+ *                 {name: 'Jamie',  age: 100},
+ *                 {name: 'Rob',   age: 21},
+ *                 {name: 'Tommy', age: 24},
+ *                 {name: 'Jacky', age: 24},
+ *                 {name: 'Ed',   age: 26}
+ *             ]
+ *         },
+ *
+ *         itemTpl: '<div>{name} is {age} years old</div>'
+ *     });
+ *
+ * Here we just defined everything inline so it's all local with nothing being loaded from a server. For each of the 5
+ * data items defined in our Store, DataView will render a {@link Ext.Component Component} and pass in the name and age
+ * data. The component will use the tpl we provided above, rendering the data in the curly bracket placeholders we
+ * provided.
+ *
+ * Because DataView is integrated with Store, any changes to the Store are immediately reflected on the screen. For
+ * example, if we add a new record to the Store it will be rendered into our DataView:
+ *
+ *     touchTeam.getStore().add({
+ *         name: 'Abe Elias',
+ *         age: 33
+ *     });
+ *
+ * We didn't have to manually update the DataView, it's just automatically updated. The same happens if we modify one
+ * of the existing records in the Store:
+ *
+ *     touchTeam.getStore().getAt(0).set('age', 42);
+ *
+ * This will get the first record in the Store (Jamie), change the age to 42 and automatically update what's on the
+ * screen.
+ *
+ *     @example miniphone
+ *     var touchTeam = Ext.create('Ext.DataView', {
+ *         fullscreen: true,
+ *         store: {
+ *             fields: ['name', 'age'],
+ *             data: [
+ *                 {name: 'Jamie',  age: 100},
+ *                 {name: 'Rob',   age: 21},
+ *                 {name: 'Tommy', age: 24},
+ *                 {name: 'Jacky', age: 24},
+ *                 {name: 'Ed',   age: 26}
+ *             ]
+ *         },
+ *
+ *         itemTpl: '<div>{name} is {age} years old</div>'
+ *     });
+ *
+ *     touchTeam.getStore().add({
+ *         name: 'Abe Elias',
+ *         age: 33
+ *     });
+ *
+ *     touchTeam.getStore().getAt(0).set('age', 42);
+ *
+ * # Loading data from a server
+ *
+ * We often want to load data from our server or some other web service so that we don't have to hard code it all
+ * locally. Let's say we want to load all of the latest tweets about Sencha Touch into a DataView, and for each one
+ * render the user's profile picture, user name and tweet message. To do this all we have to do is modify the
+ * {@link #store} and {@link #itemTpl} a little:
+ *
+ *     @example portrait
+ *     Ext.create('Ext.DataView', {
+ *         fullscreen: true,
+ *         cls: 'twitterView',
+ *         store: {
+ *             autoLoad: true,
+ *             fields: ['from_user', 'text', 'profile_image_url'],
+ *
+ *             proxy: {
+ *                 type: 'jsonp',
+ *                 url: 'http://search.twitter.com/search.json?q=Sencha Touch',
+ *
+ *                 reader: {
+ *                     type: 'json',
+ *                     rootProperty: 'results'
+ *                 }
+ *             }
+ *         },
+ *
+ *         itemTpl: '<img src="{profile_image_url}" /><h2>{from_user}</h2><p>{text}</p><div style="clear: both"></div>'
+ *     });
+ *
+ * The Store no longer has hard coded data, instead we've provided a {@link Ext.data.proxy.Proxy Proxy}, which fetches
+ * the data for us. In this case we used a JSON-P proxy so that we can load from Twitter's JSON-P search API. We also
+ * specified the fields present for each tweet, and used Store's {@link Ext.data.Store#autoLoad autoLoad} configuration
+ * to load automatically. Finally, we configured a Reader to decode the response from Twitter, telling it to expect
+ * JSON and that the tweets can be found in the 'results' part of the JSON response.
+ *
+ * The last thing we did is update our template to render the image, Twitter username and message. All we need to do
+ * now is add a little CSS to style the list the way we want it and we end up with a very basic Twitter viewer. Click
+ * the preview button on the example above to see it in action.
+ */
+Ext.define('Ext.dataview.DataView', {
+    extend: 'Ext.Container',
+
+    alternateClassName: 'Ext.DataView',
+
+    mixins: ['Ext.mixin.Selectable'],
+
+    xtype: 'dataview',
+
+    requires: [
+        'Ext.LoadMask',
+        'Ext.data.StoreManager',
+        'Ext.dataview.component.Container',
+        'Ext.dataview.element.Container'
+    ],
+
+    /**
+     * @event containertap
+     * Fires when a tap occurs and it is not on a template node.
+     * @removed 2.0.0
+     */
+
+    /**
+     * @event itemtouchstart
+     * Fires whenever an item is touched
+     * @param {Ext.dataview.DataView} this
+     * @param {Number} index The index of the item touched
+     * @param {Ext.Element/Ext.dataview.component.DataItem} target The element or DataItem touched
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtouchmove
+     * Fires whenever an item is moved
+     * @param {Ext.dataview.DataView} this
+     * @param {Number} index The index of the item moved
+     * @param {Ext.Element/Ext.dataview.component.DataItem} target The element or DataItem moved
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtouchend
+     * Fires whenever an item is touched
+     * @param {Ext.dataview.DataView} this
+     * @param {Number} index The index of the item touched
+     * @param {Ext.Element/Ext.dataview.component.DataItem} target The element or DataItem touched
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtap
+     * Fires whenever an item is tapped
+     * @param {Ext.dataview.DataView} this
+     * @param {Number} index The index of the item tapped
+     * @param {Ext.Element/Ext.dataview.component.DataItem} target The element or DataItem tapped
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemtaphold
+     * Fires whenever an item's taphold event fires
+     * @param {Ext.dataview.DataView} this
+     * @param {Number} index The index of the item touched
+     * @param {Ext.Element/Ext.dataview.component.DataItem} target The element or DataItem touched
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemsingletap
+     * Fires whenever an item is singletapped
+     * @param {Ext.dataview.DataView} this
+     * @param {Number} index The index of the item singletapped
+     * @param {Ext.Element/Ext.dataview.component.DataItem} target The element or DataItem singletapped
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemdoubletap
+     * Fires whenever an item is doubletapped
+     * @param {Ext.dataview.DataView} this
+     * @param {Number} index The index of the item doubletapped
+     * @param {Ext.Element/Ext.dataview.component.DataItem} target The element or DataItem doubletapped
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event itemswipe
+     * Fires whenever an item is swiped
+     * @param {Ext.dataview.DataView} this
+     * @param {Number} index The index of the item swiped
+     * @param {Ext.Element/Ext.dataview.component.DataItem} target The element or DataItem swiped
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Ext.EventObject} e The event object
+     */
+
+    /**
+     * @event select
+     * @preventable doItemSelect
+     * Fires whenever an item is selected
+     * @param {Ext.dataview.DataView} this
+     * @param {Ext.data.Model} record The record associated to the item
+     */
+
+    /**
+     * @event deselect
+     * @preventable doItemDeselect
+     * Fires whenever an item is deselected
+     * @param {Ext.dataview.DataView} this
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {Boolean} supressed Flag to suppress the event
+     */
+
+    /**
+     * @event refresh
+     * @preventable doRefresh
+     * Fires whenever the DataView is refreshed
+     * @param {Ext.dataview.DataView} this
+     */
+
+    /**
+     * @hide
+     * @event add
+     */
+
+    /**
+     * @hide
+     * @event remove
+     */
+
+    /**
+     * @hide
+     * @event move
+     */
+
+    config: {
+        /**
+         * @cfg layout
+         * Hide layout config in DataView. It only causes confusion.
+         * @accessor
+         * @private
+         */
+
+        /**
+         * @cfg {Ext.data.Store/Object} store
+         * Can be either a Store instance or a configuration object that will be turned into a Store. The Store is used
+         * to populate the set of items that will be rendered in the DataView. See the DataView intro documentation for
+         * more information about the relationship between Store and DataView.
+         * @accessor
+         */
+        store: null,
+
+        /**
+         * @cfg baseCls
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'dataview',
+
+        /**
+         * @cfg {String} emptyText
+         * The text to display in the view when there is no data to display
+         */
+        emptyText: null,
+
+        /**
+         * @cfg {Boolean} deferEmptyText `true` to defer `emptyText` being applied until the store's first load.
+         */
+        deferEmptyText: true,
+
+        /**
+         * @cfg {String/String[]/Ext.XTemplate} itemTpl
+         * The `tpl` to use for each of the items displayed in this DataView.
+         */
+        itemTpl: '<div>{text}</div>',
+
+        /**
+         * @cfg {String} pressedCls
+         * The CSS class to apply to an item on the view while it is being pressed.
+         * @accessor
+         */
+        pressedCls: 'x-item-pressed',
+
+        /**
+         * @cfg {String} itemCls
+         * An additional CSS class to apply to items within the DataView.
+         * @accessor
+         */
+        itemCls: null,
+
+        /**
+         * @cfg {String} selectedCls
+         * The CSS class to apply to an item on the view while it is selected.
+         * @accessor
+         */
+        selectedCls: 'x-item-selected',
+
+        /**
+         * @cfg {String} triggerEvent
+         * Determines what type of touch event causes an item to be selected.
+         * Valid options are: 'itemtap', 'itemsingletap', 'itemdoubletap', 'itemswipe', 'itemtaphold'.
+         * @accessor
+         */
+        triggerEvent: 'itemtap',
+
+        /**
+         * @cfg {String} triggerCtEvent
+         * Determines what type of touch event is recognized as a touch on the container.
+         * Valid options are 'tap' and 'singletap'.
+         * @accessor
+         */
+        triggerCtEvent: 'tap',
+
+        /**
+         * @cfg {Boolean} deselectOnContainerClick
+         * When set to true, tapping on the DataView's background (i.e. not on
+         * an item in the DataView) will deselect any currently selected items.
+         * @accessor
+         */
+        deselectOnContainerClick: true,
+
+        /**
+         * @cfg scrollable
+         * @inheritdoc
+         */
+        scrollable: true,
+
+        /**
+         * @cfg {Boolean/Object} inline
+         * When set to `true` the items within the DataView will have their display set to inline-block
+         * and be arranged horizontally. By default the items will wrap to the width of the DataView.
+         * Passing an object with `{ wrap: false }` will turn off this wrapping behavior and overflowed
+         * items will need to be scrolled to horizontally.
+         * @accessor
+         */
+        inline: null,
+
+        /**
+         * @cfg {Number} pressedDelay
+         * The amount of delay between the `tapstart` and the moment we add the `pressedCls`.
+         *
+         * Settings this to `true` defaults to 100ms.
+         * @accessor
+         */
+        pressedDelay: 100,
+
+        /**
+         * @cfg {String} loadingText
+         * A string to display during data load operations.  If specified, this text will be
+         * displayed in a loading div and the view's contents will be cleared while loading, otherwise the view's
+         * contents will continue to display normally until the new data is loaded and the contents are replaced.
+         */
+        loadingText: 'Loading...',
+
+        /**
+         * @cfg {Boolean} useComponents
+         * Flag the use a component based DataView implementation.  This allows the full use of components in the
+         * DataView at the cost of some performance.
+         *
+         * Checkout the [DataView Guide](#!/guide/dataview) for more information on using this configuration.
+         * @accessor
+         */
+        useComponents: null,
+
+        /**
+         * @cfg {Object} itemConfig
+         * A configuration object that is passed to every item created by a component based DataView. Because each
+         * item that a DataView renders is a Component, we can pass configuration options to each component to
+         * easily customize how each child component behaves.
+         *
+         * __Note:__ this is only used when `{@link #useComponents}` is `true`.
+         * @accessor
+         */
+        itemConfig: {},
+
+        /**
+         * @cfg {Number} maxItemCache
+         * Maintains a cache of reusable components when using a component based DataView.  Improving performance at
+         * the cost of memory.
+         *
+         * __Note:__ this is currently only used when `{@link #useComponents}` is `true`.
+         * @accessor
+         */
+        maxItemCache: 20,
+
+        /**
+         * @cfg {String} defaultType
+         * The xtype used for the component based DataView.
+         *
+         * __Note:__ this is only used when `{@link #useComponents}` is `true`.
+         * @accessor
+         */
+        defaultType: 'dataitem',
+
+        /**
+         * @cfg {Boolean} scrollToTopOnRefresh
+         * Scroll the DataView to the top when the DataView is refreshed.
+         * @accessor
+         */
+        scrollToTopOnRefresh: true
+    },
+
+    constructor: function(config) {
+        var me = this,
+            layout;
+
+        me.hasLoadedStore = false;
+
+        me.mixins.selectable.constructor.apply(me, arguments);
+
+        me.indexOffset = 0;
+
+        me.callParent(arguments);
+
+    },
+
+    updateItemCls: function(newCls, oldCls) {
+        var container = this.container;
+        if (container) {
+            if (oldCls) {
+                container.doRemoveItemCls(oldCls);
+            }
+            if (newCls) {
+                container.doAddItemCls(newCls);
+            }
+        }
+    },
+
+    storeEventHooks: {
+        beforeload: 'onBeforeLoad',
+        load: 'onLoad',
+        refresh: 'refresh',
+        addrecords: 'onStoreAdd',
+        removerecords: 'onStoreRemove',
+        updaterecord: 'onStoreUpdate'
+    },
+
+    initialize: function() {
+        this.callParent();
+        var me = this,
+            container;
+
+        me.on(me.getTriggerCtEvent(), me.onContainerTrigger, me);
+
+        container = me.container = this.add(new Ext.dataview[me.getUseComponents() ? 'component' : 'element'].Container({
+            baseCls: this.getBaseCls()
+        }));
+        container.dataview = me;
+
+        me.on(me.getTriggerEvent(), me.onItemTrigger, me);
+
+        container.on({
+            itemtouchstart: 'onItemTouchStart',
+            itemtouchend: 'onItemTouchEnd',
+            itemtap: 'onItemTap',
+            itemtaphold: 'onItemTapHold',
+            itemtouchmove: 'onItemTouchMove',
+            itemsingletap: 'onItemSingleTap',
+            itemdoubletap: 'onItemDoubleTap',
+            itemswipe: 'onItemSwipe',
+            scope: me
+        });
+
+        if (me.getStore()) {
+            if (me.isPainted()) {
+                me.refresh();
+            }
+            else {
+                me.on({
+                    painted: 'refresh',
+                    single: true
+                });
+            }
+        }
+    },
+
+    applyInline: function(config) {
+        if (Ext.isObject(config)) {
+            config = Ext.apply({}, config);
+        }
+        return config;
+    },
+
+    updateInline: function(newInline, oldInline) {
+        var baseCls = this.getBaseCls();
+        if (oldInline) {
+            this.removeCls([baseCls + '-inlineblock', baseCls + '-nowrap']);
+        }
+        if (newInline) {
+            this.addCls(baseCls + '-inlineblock');
+            if (Ext.isObject(newInline) && newInline.wrap === false) {
+                this.addCls(baseCls + '-nowrap');
+            }
+            else {
+                this.removeCls(baseCls + '-nowrap');
+            }
+        }
+    },
+
+    /**
+     * Function which can be overridden to provide custom formatting for each Record that is used by this
+     * DataView's {@link #tpl template} to render each node.
+     * @param {Object/Object[]} data The raw data object that was used to create the Record.
+     * @param {Number} recordIndex the index number of the Record being prepared for rendering.
+     * @param {Ext.data.Model} record The Record being prepared for rendering.
+     * @return {Array/Object} The formatted data in a format expected by the internal {@link #tpl template}'s `overwrite()` method.
+     * (either an array if your params are numeric (i.e. `{0}`) or an object (i.e. `{foo: 'bar'}`))
+     */
+    prepareData: function(data, index, record) {
+        return data;
+    },
+
+    // apply to the selection model to maintain visual UI cues
+    onContainerTrigger: function(e) {
+        var me = this;
+        if (e.target != me.element.dom) {
+            return;
+        }
+        if (me.getDeselectOnContainerClick() && me.getStore()) {
+            me.deselectAll();
+        }
+    },
+
+    // apply to the selection model to maintain visual UI cues
+    onItemTrigger: function(me, index) {
+        this.selectWithEvent(this.getStore().getAt(index));
+    },
+
+    doAddPressedCls: function(record) {
+        var me = this,
+            item = me.getItemAt(me.getStore().indexOf(record));
+        if (Ext.isElement(item)) {
+            item = Ext.get(item);
+        }
+        if (item) {
+            item.addCls(me.getPressedCls());
+        }
+    },
+
+    onItemTouchStart: function(container, target, index, e) {
+        var me = this,
+            store = me.getStore(),
+            record = store && store.getAt(index);
+
+        me.fireAction('itemtouchstart', [me, index, target, record, e], 'doItemTouchStart');
+    },
+
+    doItemTouchStart: function(me, index, target, record) {
+        var pressedDelay = me.getPressedDelay();
+
+        if (record) {
+            if (pressedDelay > 0) {
+                me.pressedTimeout = Ext.defer(me.doAddPressedCls, pressedDelay, me, [record]);
+            }
+            else {
+                me.doAddPressedCls(record);
+            }
+        }
+    },
+
+    onItemTouchEnd: function(container, target, index, e) {
+        var me = this,
+            store = me.getStore(),
+            record = store && store.getAt(index);
+
+        if (this.hasOwnProperty('pressedTimeout')) {
+            clearTimeout(this.pressedTimeout);
+            delete this.pressedTimeout;
+        }
+
+        if (record && target) {
+            target.removeCls(me.getPressedCls());
+        }
+
+        me.fireEvent('itemtouchend', me, index, target, record, e);
+    },
+
+    onItemTouchMove: function(container, target, index, e) {
+        var me = this,
+            store = me.getStore(),
+            record = store && store.getAt(index);
+
+        if (me.hasOwnProperty('pressedTimeout')) {
+            clearTimeout(me.pressedTimeout);
+            delete me.pressedTimeout;
+        }
+
+        if (record && target) {
+            target.removeCls(me.getPressedCls());
+        }
+        me.fireEvent('itemtouchmove', me, index, target, record, e);
+    },
+
+    onItemTap: function(container, target, index, e) {
+        var me = this,
+            store = me.getStore(),
+            record = store && store.getAt(index);
+
+        me.fireEvent('itemtap', me, index, target, record, e);
+    },
+
+    onItemTapHold: function(container, target, index, e) {
+        var me = this,
+            store = me.getStore(),
+            record = store && store.getAt(index);
+
+        me.fireEvent('itemtaphold', me, index, target, record, e);
+    },
+
+    onItemSingleTap: function(container, target, index, e) {
+        var me = this,
+            store = me.getStore(),
+            record = store && store.getAt(index);
+
+        me.fireEvent('itemsingletap', me, index, target, record, e);
+    },
+
+    onItemDoubleTap: function(container, target, index, e) {
+        var me = this,
+            store = me.getStore(),
+            record = store && store.getAt(index);
+
+        me.fireEvent('itemdoubletap', me, index, target, record, e);
+    },
+
+    onItemSwipe: function(container, target, index, e) {
+        var me = this,
+            store = me.getStore(),
+            record = store && store.getAt(index);
+
+        me.fireEvent('itemswipe', me, index, target, record, e);
+    },
+
+    // invoked by the selection model to maintain visual UI cues
+    onItemSelect: function(record, suppressEvent) {
+        var me = this;
+        if (suppressEvent) {
+            me.doItemSelect(me, record);
+        } else {
+            me.fireAction('select', [me, record], 'doItemSelect');
+        }
+    },
+
+    // invoked by the selection model to maintain visual UI cues
+    doItemSelect: function(me, record) {
+        if (me.container && !me.isDestroyed) {
+            var item = me.getItemAt(me.getStore().indexOf(record));
+            if (Ext.isElement(item)) {
+                item = Ext.get(item);
+            }
+            if (item) {
+                item.removeCls(me.getPressedCls());
+                item.addCls(me.getSelectedCls());
+            }
+        }
+    },
+
+    // invoked by the selection model to maintain visual UI cues
+    onItemDeselect: function(record, suppressEvent) {
+        var me = this;
+        if (me.container && !me.isDestroyed) {
+            if (suppressEvent) {
+                me.doItemDeselect(me, record);
+            }
+            else {
+                me.fireAction('deselect', [me, record, suppressEvent], 'doItemDeselect');
+            }
+        }
+    },
+
+    doItemDeselect: function(me, record) {
+        var item = me.getItemAt(me.getStore().indexOf(record));
+
+        if (Ext.isElement(item)) {
+            item = Ext.get(item);
+        }
+
+        if (item) {
+            item.removeCls([me.getPressedCls(), me.getSelectedCls()]);
+        }
+    },
+
+    updateData: function(data) {
+        var store = this.getStore();
+        if (!store) {
+            this.setStore(Ext.create('Ext.data.Store', {
+                data: data
+            }));
+        } else {
+            store.add(data);
+        }
+    },
+
+    applyStore: function(store) {
+        var me = this,
+            bindEvents = Ext.apply({}, me.storeEventHooks, { scope: me }),
+            proxy, reader;
+
+        if (store) {
+            store = Ext.data.StoreManager.lookup(store);
+            if (store && Ext.isObject(store) && store.isStore) {
+                store.on(bindEvents);
+                proxy = store.getProxy();
+                if (proxy) {
+                    reader = proxy.getReader();
+                    if (reader) {
+                        reader.on('exception', 'handleException', this);
+                    }
+                }
+            }
+        }
+
+        return store;
+    },
+
+    /**
+     * Method called when the Store's Reader throws an exception
+     * @method handleException
+     */
+    handleException: function() {
+        this.setMasked(false);
+    },
+
+    updateStore: function(newStore, oldStore) {
+        var me = this,
+            bindEvents = Ext.apply({}, me.storeEventHooks, { scope: me }),
+            proxy, reader;
+
+        if (oldStore && Ext.isObject(oldStore) && oldStore.isStore) {
+            me.onStoreClear();
+            if (oldStore.getAutoDestroy()) {
+                oldStore.destroy();
+            }
+            else {
+                oldStore.un(bindEvents);
+                proxy = oldStore.getProxy();
+                if (proxy) {
+                    reader = proxy.getReader();
+                    if (reader) {
+                        reader.un('exception', 'handleException', this);
+                    }
+                }
+            }
+        }
+
+        if (newStore) {
+            if (newStore.isLoaded()) {
+                this.hasLoadedStore = true;
+            }
+
+            if (newStore.isLoading()) {
+                me.onBeforeLoad();
+            }
+            if (me.container) {
+                me.refresh();
+            }
+        }
+    },
+
+    onBeforeLoad: function() {
+        var loadingText = this.getLoadingText();
+        if (loadingText && this.isPainted()) {
+            this.setMasked({
+                xtype: 'loadmask',
+                message: loadingText
+            });
+        }
+
+        this.hideEmptyText();
+    },
+
+    updateEmptyText: function(newEmptyText, oldEmptyText) {
+        var me = this,
+            store;
+
+        if (oldEmptyText && me.emptyTextCmp) {
+            me.remove(me.emptyTextCmp, true);
+            delete me.emptyTextCmp;
+        }
+
+        if (newEmptyText) {
+            me.emptyTextCmp = me.add({
+                xtype: 'component',
+                cls: me.getBaseCls() + '-emptytext',
+                html: newEmptyText,
+                hidden: true
+            });
+            store = me.getStore();
+            if (store && me.hasLoadedStore && !store.getCount()) {
+                this.showEmptyText();
+            }
+        }
+    },
+
+    onLoad: function(store) {
+        //remove any masks on the store
+        this.hasLoadedStore = true;
+        this.setMasked(false);
+
+        if (!store.getCount()) {
+            this.showEmptyText();
+        }
+    },
+
+    /**
+     * Refreshes the view by reloading the data from the store and re-rendering the template.
+     */
+    refresh: function() {
+        var me = this,
+            container = me.container;
+
+        if (!me.getStore()) {
+            if (!me.hasLoadedStore && !me.getDeferEmptyText()) {
+                me.showEmptyText();
+            }
+            return;
+        }
+        if (container) {
+            me.fireAction('refresh', [me], 'doRefresh');
+        }
+    },
+
+    applyItemTpl: function(config) {
+        return (Ext.isObject(config) && config.isTemplate) ? config : new Ext.XTemplate(config);
+    },
+
+    onAfterRender: function() {
+        var me = this;
+        me.callParent(arguments);
+        me.updateStore(me.getStore());
+    },
+
+    /**
+     * Returns an item at the specified index.
+     * @param {Number} index Index of the item.
+     * @return {Ext.dom.Element/Ext.dataview.component.DataItem} item Item at the specified index.
+     */
+    getItemAt: function(index) {
+        return this.getViewItems()[index - this.indexOffset];
+    },
+
+    /**
+     * Returns an index for the specified item.
+     * @param {Number} item The item to locate.
+     * @return {Number} Index for the specified item.
+     */
+    getItemIndex: function(item) {
+        var index = this.getViewItems().indexOf(item);
+        return (index === -1) ? index : this.indexOffset + index;
+    },
+
+    /**
+     * Returns an array of the current items in the DataView.
+     * @return {Ext.dom.Element[]/Ext.dataview.component.DataItem[]} Array of Items.
+     */
+    getViewItems: function() {
+        return this.container.getViewItems();
+    },
+
+    doRefresh: function(me) {
+        var container = me.container,
+            store = me.getStore(),
+            records = store.getRange(),
+            items = me.getViewItems(),
+            recordsLn = records.length,
+            itemsLn = items.length,
+            deltaLn = recordsLn - itemsLn,
+            scrollable = me.getScrollable(),
+            i, item;
+
+        if (this.getScrollToTopOnRefresh() && scrollable) {
+            scrollable.getScroller().scrollToTop();
+        }
+
+        // No items, hide all the items from the collection.
+        if (recordsLn < 1) {
+            me.onStoreClear();
+            return;
+        } else {
+            me.hideEmptyText();
+        }
+
+        // Too many items, hide the unused ones
+        if (deltaLn < 0) {
+            container.moveItemsToCache(itemsLn + deltaLn, itemsLn - 1);
+            // Items can changed, we need to refresh our references
+            items = me.getViewItems();
+            itemsLn = items.length;
+        }
+        // Not enough items, create new ones
+        else if (deltaLn > 0) {
+            container.moveItemsFromCache(store.getRange(itemsLn));
+        }
+
+        // Update Data and insert the new html for existing items
+        for (i = 0; i < itemsLn; i++) {
+            item = items[i];
+            container.updateListItem(records[i], item);
+        }
+    },
+
+    showEmptyText: function() {
+        if (this.getEmptyText() && (this.hasLoadedStore || !this.getDeferEmptyText()) ) {
+            this.emptyTextCmp.show();
+        }
+    },
+
+    hideEmptyText: function() {
+        if (this.getEmptyText()) {
+            this.emptyTextCmp.hide();
+        }
+    },
+
+    destroy: function() {
+        var store = this.getStore();
+        if (store && store.getAutoDestroy()) {
+            store.destroy();
+        }
+        this.callParent(arguments);
+    },
+
+    onStoreClear: function() {
+        var me = this,
+            container = me.container,
+            items = me.getViewItems();
+
+        container.moveItemsToCache(0, items.length - 1);
+        this.showEmptyText();
+    },
+
+    /**
+     * @private
+     * @param store
+     * @param records
+     */
+    onStoreAdd: function(store, records) {
+        if (records) {
+            this.hideEmptyText();
+            this.container.moveItemsFromCache(records);
+        }
+    },
+
+    /**
+     * @private
+     * @param store
+     * @param records
+     * @param indices
+     */
+    onStoreRemove: function(store, records, indices) {
+        var container = this.container,
+            ln = records.length,
+            i;
+        for (i = 0; i < ln; i++) {
+            container.moveItemsToCache(indices[i], indices[i]);
+        }
+    },
+
+    /**
+     * @private
+     * @param store
+     * @param record
+     * @param {Number} newIndex
+     * @param {Number} oldIndex
+     */
+    onStoreUpdate: function(store, record, newIndex, oldIndex) {
+        var me = this,
+            container = me.container;
+
+        oldIndex = (typeof oldIndex === 'undefined') ? newIndex : oldIndex;
+
+        if (oldIndex !== newIndex) {
+            container.updateAtNewIndex(oldIndex, newIndex, record);
+            if (me.isSelected(record)) {
+                me.doItemSelect(me, record);
+            }
+        }
+        else {
+            // Bypassing setter because sometimes we pass the same record (different data)
+            container.updateListItem(record, me.getViewItems()[newIndex]);
+        }
+    }
+});
+
+/**
  * @author Ed Spencer
  *
  * Represents a single read or write operation performed by a {@link Ext.data.proxy.Proxy Proxy}. Operation objects are
@@ -51310,6 +53630,1754 @@ Ext.define('Ext.data.Validations', {
     }
 });
 
+/**
+ * @aside video list
+ * @aside guide list
+ *
+ * IndexBar is a component used to display a list of data (primarily an alphabet) which can then be used to quickly
+ * navigate through a list (see {@link Ext.List}) of data. When a user taps on an item in the {@link Ext.IndexBar},
+ * it will fire the {@link #index} event.
+ *
+ * Here is an example of the usage in a {@link Ext.List}:
+ *
+ *     @example phone portrait preview
+ *     Ext.define('Contact', {
+ *         extend: 'Ext.data.Model',
+ *         config: {
+ *             fields: ['firstName', 'lastName']
+ *         }
+ *     });
+ *
+ *     var store = new Ext.data.JsonStore({
+ *        model: 'Contact',
+ *        sorters: 'lastName',
+ *
+ *        grouper: {
+ *            groupFn: function(record) {
+ *                return record.get('lastName')[0];
+ *            }
+ *        },
+ *
+ *        data: [
+ *            {firstName: 'Tommy',   lastName: 'Maintz'},
+ *            {firstName: 'Rob',     lastName: 'Dougan'},
+ *            {firstName: 'Ed',      lastName: 'Spencer'},
+ *            {firstName: 'Jamie',   lastName: 'Avins'},
+ *            {firstName: 'Aaron',   lastName: 'Conran'},
+ *            {firstName: 'Dave',    lastName: 'Kaneda'},
+ *            {firstName: 'Jacky',   lastName: 'Nguyen'},
+ *            {firstName: 'Abraham', lastName: 'Elias'},
+ *            {firstName: 'Jay',     lastName: 'Robinson'},
+ *            {firstName: 'Nigel',   lastName: 'White'},
+ *            {firstName: 'Don',     lastName: 'Griffin'},
+ *            {firstName: 'Nico',    lastName: 'Ferrero'},
+ *            {firstName: 'Jason',   lastName: 'Johnston'}
+ *        ]
+ *     });
+ *
+ *     var list = new Ext.List({
+ *        fullscreen: true,
+ *        itemTpl: '<div class="contact">{firstName} <strong>{lastName}</strong></div>',
+ *
+ *        grouped     : true,
+ *        indexBar    : true,
+ *        store: store,
+ *        hideOnMaskTap: false
+ *     });
+ *
+*/
+Ext.define('Ext.dataview.IndexBar', {
+    extend: 'Ext.Component',
+    alternateClassName: 'Ext.IndexBar',
+
+    /**
+     * @event index
+     * Fires when an item in the index bar display has been tapped.
+     * @param {Ext.dataview.IndexBar} this The IndexBar instance
+     * @param {String} html The HTML inside the tapped node.
+     * @param {Ext.dom.Element} target The node on the indexbar that has been tapped.
+     */
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'indexbar',
+
+        /**
+         * @cfg {String} direction
+         * Layout direction, can be either 'vertical' or 'horizontal'
+         * @accessor
+         */
+        direction: 'vertical',
+
+        /**
+         * @cfg {Array} letters
+         * The letters to show on the index bar.
+         * @accessor
+         */
+        letters: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'],
+
+        ui: 'alphabet',
+
+        /**
+         * @cfg {String} listPrefix
+         * The prefix string to be used at the beginning of the list.
+         * E.g: useful to add a "#" prefix before numbers.
+         * @accessor
+         */
+        listPrefix: null
+    },
+
+    // @private
+    itemCls: Ext.baseCSSPrefix + '',
+
+    updateDirection: function(newDirection, oldDirection) {
+        var baseCls = this.getBaseCls();
+
+        this.element.replaceCls(baseCls + '-' + oldDirection, baseCls + '-' + newDirection);
+    },
+
+    getElementConfig: function() {
+        return {
+            reference: 'wrapper',
+            classList: ['x-centered', 'x-indexbar-wrapper'],
+            children: [this.callParent()]
+        };
+    },
+
+    updateLetters: function(letters) {
+        this.innerElement.setHtml('');
+
+        if (letters) {
+            var ln = letters.length,
+                i;
+
+            for (i = 0; i < ln; i++) {
+                this.innerElement.createChild({
+                    html: letters[i]
+                });
+            }
+        }
+    },
+
+    updateListPrefix: function(listPrefix) {
+        if (listPrefix && listPrefix.length) {
+            this.innerElement.createChild({
+                html: listPrefix
+            }, 0);
+        }
+    },
+
+    // @private
+    initialize: function() {
+        this.callParent();
+
+        this.innerElement.on({
+            touchstart: this.onTouchStart,
+            touchend: this.onTouchEnd,
+            touchmove: this.onTouchMove,
+            scope: this
+        });
+    },
+
+    // @private
+    onTouchStart: function(e, t) {
+        e.stopPropagation();
+        this.innerElement.addCls(this.getBaseCls() + '-pressed');
+        this.pageBox = this.innerElement.getPageBox();
+        this.onTouchMove(e);
+    },
+
+    // @private
+    onTouchEnd: function(e, t) {
+        this.innerElement.removeCls(this.getBaseCls() + '-pressed');
+    },
+
+    // @private
+    onTouchMove: function(e) {
+        var point = Ext.util.Point.fromEvent(e),
+            target,
+            pageBox = this.pageBox;
+
+        if (!pageBox) {
+            pageBox = this.pageBox = this.el.getPageBox();
+        }
+
+        if (this.getDirection() === 'vertical') {
+            if (point.y > pageBox.bottom || point.y < pageBox.top) {
+                return;
+            }
+            target = Ext.Element.fromPoint(pageBox.left + (pageBox.width / 2), point.y);
+        }
+        else {
+            if (point.x > pageBox.right || point.x < pageBox.left) {
+                return;
+            }
+            target = Ext.Element.fromPoint(point.x, pageBox.top + (pageBox.height / 2));
+        }
+
+        if (target) {
+            this.fireEvent('index', this, target.dom.innerHTML, target);
+        }
+    },
+
+    destroy: function() {
+        var me = this,
+            elements = Array.prototype.slice.call(me.innerElement.dom.childNodes),
+            ln = elements.length,
+            i = 0;
+
+        for (; i < ln; i++) {
+            Ext.removeNode(elements[i]);
+        }
+        this.callParent();
+    }
+
+}, function() {
+});
+
+/**
+ * @private - To be made a sample
+ */
+Ext.define('Ext.dataview.ListItemHeader', {
+    extend: 'Ext.Component',
+    xtype : 'listitemheader',
+
+    config: {
+        /**
+         * @cfg
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'list-header',
+        docked: 'top'
+    }
+});
+
+/**
+ * A DataItem is a container for {@link Ext.dataview.DataView} with useComponents: true. It ties together
+ * {@link Ext.data.Model records} to its contained Components via a {@link #dataMap dataMap} configuration.
+ *
+ * For example, lets say you have a `text` configuration which, when applied, gets turned into an instance of an
+ * Ext.Component. We want to update the {@link #html} of a sub-component when the 'text' field of the record gets
+ * changed.
+ *
+ * As you can see below, it is simply a matter of setting the key of the object to be the getter of the config
+ * (`getText`), and then give that property a value of an object, which then has 'setHtml' (the `html` setter) as the key,
+ * and 'text' (the field name) as the value. You can continue this for a as many sub-components as you wish.
+ *
+ *     dataMap: {
+ *         // When the record is updated, get the text configuration, and
+ *         // call {@link #setHtml} with the 'text' field of the record.
+ *         getText: {
+ *             setHtml: 'text'
+ *         },
+ *
+ *         // When the record is updated, get the userName configuration, and
+ *         // call {@link #setHtml} with the 'from_user' field of the record.
+ *         getUserName: {
+ *             setHtml: 'from_user'
+ *         },
+ *
+ *         // When the record is updated, get the avatar configuration, and
+ *         // call `setSrc` with the 'profile_image_url' field of the record.
+ *         getAvatar: {
+ *             setSrc: 'profile_image_url'
+ *         }
+ *     }
+ */
+Ext.define('Ext.dataview.component.ListItem', {
+    extend: 'Ext.dataview.component.DataItem',
+    xtype : 'listitem',
+
+    config: {
+        baseCls: Ext.baseCSSPrefix + 'list-item',
+
+        dataMap: null,
+
+        body: {
+            xtype: 'component',
+            cls: 'x-list-item-body'
+        },
+
+        disclosure: {
+            xtype: 'component',
+            cls: 'x-list-disclosure',
+            hidden: true,
+            docked: 'right'
+        },
+
+        header: {
+            xtype: 'component',
+            cls: 'x-list-header',
+            html: ' ',
+            hidden: true
+        },
+
+        tpl: null,
+        items: null
+    },
+
+    applyBody: function(body) {
+        if (body && !body.isComponent) {
+            body = Ext.factory(body, Ext.Component, this.getBody());
+        }
+        return body;
+    },
+
+    updateBody: function(body, oldBody) {
+        if (body) {
+            this.add(body);
+        } else if (oldBody) {
+            oldBody.destroy();
+        }
+    },
+
+    applyHeader: function(header) {
+        if (header && !header.isComponent) {
+            header = Ext.factory(header, Ext.Component, this.getHeader());
+        }
+        return header;
+    },
+
+    updateHeader: function(header, oldHeader) {
+        if (header) {
+            this.element.getFirstChild().insertFirst(header.element);
+        } else if (oldHeader) {
+            oldHeader.destroy();
+        }
+    },
+
+    applyDisclosure: function(disclosure) {
+        if (disclosure && !disclosure.isComponent) {
+            disclosure = Ext.factory(disclosure, Ext.Component, this.getDisclosure());
+        }
+        return disclosure;
+    },
+
+    updateDisclosure: function(disclosure, oldDisclosure) {
+        if (disclosure) {
+            this.add(disclosure);
+        } else if (oldDisclosure) {
+            oldDisclosure.destroy();
+        }
+    },
+
+    updateTpl: function(tpl) {
+        this.getBody().setTpl(tpl);
+    },
+
+    updateRecord: function(record) {
+        var me = this,
+            dataview = me.dataview || this.getDataview(),
+            data = record && dataview.prepareData(record.getData(true), dataview.getStore().indexOf(record), record),
+            dataMap = me.getDataMap(),
+            body = this.getBody(),
+            disclosure = this.getDisclosure();
+
+        me._record = record;
+
+        if (dataMap) {
+            me.doMapData(dataMap, data, body);
+        } else if (body) {
+            body.updateData(data || null);
+        }
+
+        if (disclosure && record && dataview.getOnItemDisclosure()) {
+            var disclosureProperty = dataview.getDisclosureProperty();
+            disclosure[(data.hasOwnProperty(disclosureProperty) && data[disclosureProperty] === false) ? 'hide' : 'show']();
+        }
+
+        /**
+         * @event updatedata
+         * Fires whenever the data of the DataItem is updated.
+         * @param {Ext.dataview.component.DataItem} this The DataItem instance.
+         * @param {Object} newData The new data.
+         */
+        me.fireEvent('updatedata', me, data);
+    }
+});
+
+/**
+ * @private
+ */
+Ext.define('Ext.util.TranslatableList', {
+    extend: 'Ext.util.translatable.Abstract',
+
+    config: {
+        items: []
+    },
+
+    applyItems: function(items) {
+        return Ext.Array.from(items);
+    },
+
+    doTranslate: function(x, y) {
+        var items = this.getItems(),
+            offset = 0,
+            i, ln, item, translateY;
+
+        for (i = 0, ln = items.length; i < ln; i++) {
+            item = items[i];
+
+            if (item && !item._list_hidden) {
+                translateY = y + offset;
+                offset += item.$height;
+                item.translate(0, translateY);
+            }
+        }
+    }
+});
+
+/**
+ * @private
+ */
+Ext.define('Ext.util.PositionMap', {
+    config: {
+        minimumHeight: 50
+    },
+
+    constructor: function(config) {
+        this.map = [];
+        this.adjustments = {};
+        this.offset = 0;
+
+        this.initConfig(config);
+    },
+
+    populate: function(count, offset) {
+        var map = this.map = this.map || [],
+            minimumHeight = this.getMinimumHeight(),
+            i, previousIndex, ln;
+
+        // We add 1 item to the count so that we can get the height of the bottom item
+        count++;
+        map.length = count;
+
+        map[0] = 0;
+        for (i = offset + 1, ln = count - 1; i <= ln; i++) {
+            previousIndex = i - 1;
+            map[i] = map[previousIndex] + minimumHeight;
+        }
+
+        this.adjustments = {
+            indices: [],
+            heights: {}
+        };
+        this.offset = 0;
+        for (i = 1, ln = count - 1; i <= ln; i++) {
+            previousIndex = i - 1;
+            this.offset += map[i] - map[previousIndex] - minimumHeight;
+        }
+    },
+
+    setItemHeight: function(index, height) {
+        height = Math.max(height, this.getMinimumHeight());
+        if (height !== this.getItemHeight(index)) {
+            var adjustments = this.adjustments;
+            adjustments.indices.push(parseInt(index, 10));
+            adjustments.heights[index] = height;
+        }
+    },
+
+    update: function() {
+        var adjustments = this.adjustments,
+            indices = adjustments.indices,
+            heights = adjustments.heights,
+            map = this.map,
+            ln = indices.length,
+            minimumHeight = this.getMinimumHeight(),
+            difference = 0,
+            i, j, height, index, nextIndex, currentHeight;
+
+        if (!adjustments.indices.length) {
+            return false;
+        }
+
+        Ext.Array.sort(indices, function(a, b) {
+            return a - b;
+        });
+
+        for (i = 0; i < ln; i++) {
+            index = indices[i];
+            nextIndex = indices[i + 1] || map.length - 1;
+
+            currentHeight = (map[index + 1] !== undefined) ? (map[index + 1] - map[index] + difference) : minimumHeight;
+            height = heights[index];
+
+            difference += height - currentHeight;
+
+            for (j = index + 1; j <= nextIndex; j++) {
+                map[j] += difference;
+            }
+        }
+
+        this.offset += difference;
+        this.adjustments = {
+            indices: [],
+            heights: {}
+        };
+        return true;
+    },
+
+    getItemHeight: function(index) {
+        return this.map[index + 1] - this.map[index];
+    },
+
+    getTotalHeight: function() {
+        return ((this.map.length - 1) * this.getMinimumHeight()) + this.offset;
+    },
+
+    findIndex: function(pos) {
+        return this.map.length ? this.binarySearch(this.map, pos) : 0;
+    },
+
+    binarySearch: function(sorted, value) {
+        var start = 0,
+            end = sorted.length;
+
+        if (value < sorted[0]) {
+            return 0;
+        }
+        if (value > sorted[end - 1]) {
+            return end - 1;
+        }
+        while (start + 1 < end) {
+            var mid = (start + end) >> 1,
+                val = sorted[mid];
+            if (val == value) {
+                return mid;
+            } else if (val < value) {
+                start = mid;
+            } else {
+                end = mid;
+            }
+        }
+        return start;
+    }
+});
+
+/**
+ * @aside guide list
+ * @aside video list
+ *
+ * List is a custom styled DataView which allows Grouping, Indexing, Icons, and a Disclosure. See the
+ * [Guide](#!/guide/list) and [Video](#!/video/list) for more.
+ *
+ *     @example miniphone preview
+ *     Ext.create('Ext.List', {
+ *         fullscreen: true,
+ *         itemTpl: '{title}',
+ *         data: [
+ *             { title: 'Item 1' },
+ *             { title: 'Item 2' },
+ *             { title: 'Item 3' },
+ *             { title: 'Item 4' }
+ *         ]
+ *     });
+ *
+ * A more advanced example showing a list of people groped by last name:
+ *
+ *     @example miniphone preview
+ *     Ext.define('Contact', {
+ *         extend: 'Ext.data.Model',
+ *         config: {
+ *             fields: ['firstName', 'lastName']
+ *         }
+ *     });
+ *
+ *     var store = Ext.create('Ext.data.Store', {
+ *        model: 'Contact',
+ *        sorters: 'lastName',
+ *
+ *        grouper: {
+ *            groupFn: function(record) {
+ *                return record.get('lastName')[0];
+ *            }
+ *        },
+ *
+ *        data: [
+ *            { firstName: 'Tommy',   lastName: 'Maintz'  },
+ *            { firstName: 'Rob',     lastName: 'Dougan'  },
+ *            { firstName: 'Ed',      lastName: 'Spencer' },
+ *            { firstName: 'Jamie',   lastName: 'Avins'   },
+ *            { firstName: 'Aaron',   lastName: 'Conran'  },
+ *            { firstName: 'Dave',    lastName: 'Kaneda'  },
+ *            { firstName: 'Jacky',   lastName: 'Nguyen'  },
+ *            { firstName: 'Abraham', lastName: 'Elias'   },
+ *            { firstName: 'Jay',     lastName: 'Robinson'},
+ *            { firstName: 'Nigel',   lastName: 'White'   },
+ *            { firstName: 'Don',     lastName: 'Griffin' },
+ *            { firstName: 'Nico',    lastName: 'Ferrero' },
+ *            { firstName: 'Jason',   lastName: 'Johnston'}
+ *        ]
+ *     });
+ *
+ *     Ext.create('Ext.List', {
+ *        fullscreen: true,
+ *        itemTpl: '<div class="contact">{firstName} <strong>{lastName}</strong></div>',
+ *        store: store,
+ *        grouped: true
+ *     });
+ */
+Ext.define('Ext.dataview.List', {
+    alternateClassName: 'Ext.List',
+    extend: 'Ext.dataview.DataView',
+    xtype: 'list',
+
+    mixins: ['Ext.mixin.Bindable'],
+
+    requires: [
+        'Ext.dataview.IndexBar',
+        'Ext.dataview.ListItemHeader',
+        'Ext.dataview.component.ListItem',
+        'Ext.util.TranslatableList',
+        'Ext.util.PositionMap'
+    ],
+
+    /**
+     * @event disclose
+     * @preventable doDisclose
+     * Fires whenever a disclosure is handled
+     * @param {Ext.dataview.List} this The List instance
+     * @param {Ext.data.Model} record The record associated to the item
+     * @param {HTMLElement} target The element disclosed
+     * @param {Number} index The index of the item disclosed
+     * @param {Ext.EventObject} e The event object
+     */
+
+    config: {
+        /**
+         * @cfg layout
+         * Hide layout config in DataView. It only causes confusion.
+         * @accessor
+         * @private
+         */
+        layout: 'fit',
+
+        /**
+         * @cfg {Boolean/Object} indexBar
+         * `true` to render an alphabet IndexBar docked on the right.
+         * This can also be a config object that will be passed to {@link Ext.IndexBar}.
+         * @accessor
+         */
+        indexBar: false,
+
+        icon: null,
+
+        /**
+         * @cfg {Boolean} clearSelectionOnDeactivate
+         * `true` to clear any selections on the list when the list is deactivated.
+         * @removed 2.0.0
+         */
+
+        /**
+         * @cfg {Boolean} preventSelectionOnDisclose `true` to prevent the item selection when the user
+         * taps a disclose icon.
+         * @accessor
+         */
+        preventSelectionOnDisclose: true,
+
+        /**
+         * @cfg baseCls
+         * @inheritdoc
+         */
+        baseCls: Ext.baseCSSPrefix + 'list',
+
+        /**
+         * @cfg {Boolean} pinHeaders
+         * Whether or not to pin headers on top of item groups while scrolling for an iPhone native list experience.
+         * @accessor
+         */
+        pinHeaders: true,
+
+        /**
+         * @cfg {Boolean} grouped
+         * Whether or not to group items in the provided Store with a header for each item.
+         * @accessor
+         */
+        grouped: false,
+
+        /**
+         * @cfg {Boolean/Function/Object} onItemDisclosure
+         * `true` to display a disclosure icon on each list item.
+         * The list will still fire the disclose event, and the event can be stopped before itemtap.
+         * By setting this config to a function, the function passed will be called when the disclosure
+         * is tapped.
+         * Finally you can specify an object with a 'scope' and 'handler'
+         * property defined. This will also be bound to the tap event listener
+         * and is useful when you want to change the scope of the handler.
+         * @accessor
+         */
+        onItemDisclosure: null,
+
+        /**
+         * @cfg {String} disclosureProperty
+         * A property to check on each record to display the disclosure on a per record basis.  This
+         * property must be false to prevent the disclosure from being displayed on the item.
+         * @accessor
+         */
+        disclosureProperty: 'disclosure',
+
+        /**
+         * @cfg {String} ui
+         * The style of this list. Available options are `normal` and `round`.
+         */
+        ui: 'normal',
+
+        /**
+         * @cfg {Boolean} useComponents
+         * Flag the use a component based DataView implementation.  This allows the full use of components in the
+         * DataView at the cost of some performance.
+         *
+         * Checkout the [DataView Guide](#!/guide/dataview) for more information on using this configuration.
+         * @accessor
+         * @private
+         */
+
+        /**
+         * @cfg {Object} itemConfig
+         * A configuration object that is passed to every item created by a component based DataView. Because each
+         * item that a DataView renders is a Component, we can pass configuration options to each component to
+         * easily customize how each child component behaves.
+         * Note this is only used when useComponents is true.
+         * @accessor
+         * @private
+         */
+
+        /**
+         * @cfg {Number} maxItemCache
+         * Maintains a cache of reusable components when using a component based DataView.  Improving performance at
+         * the cost of memory.
+         * Note this is currently only used when useComponents is true.
+         * @accessor
+         * @private
+         */
+
+        /**
+         * @cfg {String} defaultType
+         * The xtype used for the component based DataView. Defaults to dataitem.
+         * Note this is only used when useComponents is true.
+         * @accessor
+         */
+        defaultType: 'listitem',
+
+        /**
+         * @cfg {Object} itemMap
+         * @private
+         */
+        itemMap: {
+            minimumHeight: 47
+        },
+
+        /**
+         * @cfg {Boolean} variableHeights
+         * Whether or not this list contains items with variable heights. If you want to force the
+         * items in the list to have a fixed height, set the {@link #itemHeight} configuration.
+         * If you also variableHeights to false, the scrolling performance of the list will be
+         * improved.
+         */
+        variableHeights: true,
+
+        /**
+         * @cfg {Number} itemHeight
+         * This allows you to set the default item height and is used to roughly calculate the amount
+         * of items needed to fill the list. By default items are around 50px high. If you set this
+         * configuration in combination with setting the {@link #variableHeights} to false you
+         * can improve the scrolling speed
+         */
+        itemHeight: 47,
+
+        /**
+         * @cfg {Boolean} refreshHeightOnUpdate
+         * Set this to false if you make many updates to your list (like in an interval), but updates
+         * won't affect the item's height. Doing this will increase the performance of these updates.
+         * Note that if you have {@link #variableHeights} set to false, this configuration option has
+         * no effect.
+         */
+        refreshHeightOnUpdate: true,
+
+        scrollable: false
+    },
+
+    constructor: function(config) {
+        var me = this,
+            layout;
+        me.callParent(arguments);
+
+        if (Ext.os.is.Android4 && !Ext.browser.is.ChromeMobile) {
+            me.headerTranslateFn = Ext.Function.createThrottled(me.headerTranslateFn, 50, me);
+        }
+
+    },
+
+    topItemIndex: 0,
+    topItemPosition: 0,
+
+    updateItemHeight: function(itemHeight) {
+        this.getItemMap().setMinimumHeight(itemHeight);
+    },
+
+    applyItemMap: function(itemMap) {
+        return Ext.factory(itemMap, Ext.util.PositionMap, this.getItemMap());
+    },
+
+    // apply to the selection model to maintain visual UI cues
+//    onItemTrigger: function(me, index, target, record, e) {
+//        if (!(this.getPreventSelectionOnDisclose() && Ext.fly(e.target).hasCls(this.getBaseCls() + '-disclosure'))) {
+//            this.callParent(arguments);
+//        }
+//    },
+
+    beforeInitialize: function() {
+        var me = this,
+            container;
+
+        me.listItems = [];
+        me.scrollDockItems = {
+            top: [],
+            bottom: []
+        };
+
+        container = me.container = me.add(new Ext.Container({
+            scrollable: {
+                scroller: {
+                    autoRefresh: false,
+                    direction: 'vertical',
+                    translatable: {
+                        xclass: 'Ext.util.TranslatableList'
+                    }
+                }
+            }
+        }));
+
+        container.getScrollable().getScroller().getTranslatable().setItems(me.listItems);
+
+        // Tie List's scroller to its container's scroller
+        me.setScrollable(container.getScrollable());
+        me.scrollableBehavior = container.getScrollableBehavior();
+    },
+
+    initialize: function() {
+        var me = this,
+            container = me.container,
+            i, ln;
+
+        me.updatedItems = [];
+        me.headerMap = [];
+
+        me.on(me.getTriggerCtEvent(), me.onContainerTrigger, me);
+        me.on(me.getTriggerEvent(), me.onItemTrigger, me);
+
+        me.header = Ext.factory({
+            xclass: 'Ext.dataview.ListItemHeader',
+            html: '&nbsp;',
+            translatable: true,
+            role: 'globallistheader',
+            cls: ['x-list-header', 'x-list-header-swap']
+        });
+        me.container.innerElement.insertFirst(me.header.element);
+
+        me.headerTranslate = me.header.getTranslatable();
+        me.headerTranslate.translate(0, -10000);
+
+        if (!me.getGrouped()) {
+            me.updatePinHeaders(null);
+        }
+
+        container.element.on({
+            delegate: '.' + me.getBaseCls() + '-disclosure',
+            tap: 'handleItemDisclosure',
+            scope: me
+        });
+
+        container.element.on({
+            resize: 'onResize',
+            scope: me
+        });
+
+        // Android 2.x not a direct child
+        container.innerElement.on({
+            touchstart: 'onItemTouchStart',
+            touchend: 'onItemTouchEnd',
+            tap: 'onItemTap',
+            taphold: 'onItemTapHold',
+            singletap: 'onItemSingleTap',
+            doubletap: 'onItemDoubleTap',
+            swipe: 'onItemSwipe',
+            delegate: '.' + Ext.baseCSSPrefix + 'list-item-body',
+            scope: me
+        });
+
+        for (i = 0, ln = me.scrollDockItems.top.length; i < ln; i++) {
+            container.add(me.scrollDockItems.top[i]);
+        }
+
+        for (i = 0, ln = me.scrollDockItems.bottom.length; i < ln; i++) {
+            container.add(me.scrollDockItems.bottom[i]);
+        }
+
+        if (me.getStore()) {
+            me.refresh();
+        }
+    },
+
+    updateInline: function(newInline) {
+        var me = this;
+        me.callParent(arguments);
+        if (newInline) {
+            me.setOnItemDisclosure(false);
+            me.setIndexBar(false);
+            me.setGrouped(false);
+        }
+    },
+
+    applyIndexBar: function(indexBar) {
+        return Ext.factory(indexBar, Ext.dataview.IndexBar, this.getIndexBar());
+    },
+
+    updateIndexBar: function(indexBar) {
+        var me = this;
+        if (indexBar && me.getScrollable()) {
+            me.indexBarElement = me.getScrollableBehavior().getScrollView().getElement().appendChild(indexBar.renderElement);
+
+            indexBar.on({
+                index: 'onIndex',
+                scope: me
+            });
+
+            me.element.addCls(me.getBaseCls() + '-indexed');
+        }
+    },
+
+    updateGrouped: function(grouped) {
+        var me = this,
+            baseCls = this.getBaseCls(),
+            cls = baseCls + '-grouped',
+            unCls = baseCls + '-ungrouped';
+
+        if (grouped) {
+            me.addCls(cls);
+            me.removeCls(unCls);
+            me.updatePinHeaders(me.getPinHeaders());
+        }
+        else {
+            me.addCls(unCls);
+            me.removeCls(cls);
+            me.updatePinHeaders(null);
+        }
+
+        if (me.isPainted() && me.listItems.length) {
+            me.setItemsCount(me.listItems.length);
+        }
+    },
+
+    updatePinHeaders: function(pinnedHeaders) {
+        if (this.headerTranslate) {
+            this.headerTranslate.translate(0, -10000);
+        }
+    },
+
+    updateScrollerSize: function() {
+        var me = this,
+            totalHeight = me.getItemMap().getTotalHeight(),
+            scroller = me.container.getScrollable().getScroller();
+
+        if (totalHeight > 0) {
+            scroller.givenSize = totalHeight;
+            scroller.refresh();
+        }
+    },
+
+    onResize: function() {
+        var me = this,
+            container = me.container,
+            element = container.element,
+            minimumHeight = me.getItemMap().getMinimumHeight(),
+            containerSize;
+
+        if (!me.listItems.length) {
+            me.bind(container.getScrollable().getScroller().getTranslatable(), 'doTranslate', 'onTranslate');
+        }
+
+        me.containerSize = containerSize = element.getHeight();
+        me.setItemsCount(Math.ceil(containerSize / minimumHeight) + 1);
+    },
+
+    scrollDockHeightRefresh: function() {
+        var items = this.listItems,
+            scrollDockItems = this.scrollDockItems,
+            ln = items.length,
+            i, item;
+
+        for (i = 0; i < ln; i++) {
+            item = items[i];
+            if ((item.isFirst && scrollDockItems.top.length) || (item.isLast && scrollDockItems.bottom.length)) {
+                this.updatedItems.push(item);
+            }
+        }
+        this.refreshScroller();
+    },
+
+    headerTranslateFn: function(record, transY, headerTranslate) {
+        var headerString = this.getStore().getGroupString(record);
+
+        if (this.currentHeader !== headerString) {
+            this.currentHeader = headerString;
+            this.header.setHtml(headerString);
+        }
+        headerTranslate.translate(0, transY);
+    },
+
+    onTranslate: function(x, y, args) {
+        var me = this,
+            listItems = me.listItems,
+            itemsCount = listItems.length,
+            currentTopIndex = me.topItemIndex,
+            itemMap = me.getItemMap(),
+            store = me.getStore(),
+            storeCount = store.getCount(),
+            info = me.getListItemInfo(),
+            grouped = me.getGrouped(),
+            storeGroups = me.groups,
+            headerMap = me.headerMap,
+            headerTranslate = me.headerTranslate,
+            pinHeaders = me.getPinHeaders(),
+            maxIndex = storeCount - itemsCount + 1,
+            topIndex, changedCount, i, index, item,
+            closestHeader, record, pushedHeader, transY, element;
+
+        if (me.updatedItems.length) {
+            me.updateItemHeights();
+        }
+
+        me.topItemPosition = itemMap.findIndex(-y) || 0;
+        me.indexOffset = me.topItemIndex = topIndex = Math.max(0, Math.min(me.topItemPosition, maxIndex));
+
+        if (grouped && headerTranslate && storeGroups.length && pinHeaders) {
+            closestHeader = itemMap.binarySearch(headerMap, -y);
+            record = storeGroups[closestHeader].children[0];
+            if (record) {
+                pushedHeader = y + headerMap[closestHeader + 1] - me.headerHeight;
+                // Top of the list or above (hide the floating header offscreen)
+                if (y >= 0) {
+                    transY = -10000;
+                }
+                // Scroll the floating header a bit
+                else if (pushedHeader < 0) {
+                    transY = pushedHeader;
+                }
+                // Stick to the top of the screen
+                else {
+                    transY = Math.max(0, y);
+                }
+                this.headerTranslateFn(record, transY, headerTranslate);
+
+            }
+        }
+
+        args[1] = (itemMap.map[topIndex] || 0) + y;
+        if (currentTopIndex !== topIndex && topIndex <= maxIndex) {
+            // Scroll up
+            if (currentTopIndex > topIndex) {
+                changedCount = Math.min(itemsCount, currentTopIndex - topIndex);
+                for (i = changedCount - 1; i >= 0; i--) {
+                    item = listItems.pop();
+                    listItems.unshift(item);
+                    me.updateListItem(item, i + topIndex, info);
+                }
+            }
+            else {
+                // Scroll down
+                changedCount = Math.min(itemsCount, topIndex - currentTopIndex);
+                for (i = 0; i < changedCount; i++) {
+                    item = listItems.shift();
+                    listItems.push(item);
+                    index = i + topIndex + itemsCount - changedCount;
+                    me.updateListItem(item, index, info);
+                }
+            }
+        }
+
+        if (listItems.length && grouped && pinHeaders) {
+            if (me.headerIndices[topIndex]) {
+                element = listItems[0].getHeader().element;
+                if (y < itemMap.map[topIndex]) {
+                    element.setVisibility(false);
+                }
+                else {
+                    element.setVisibility(true);
+                }
+            }
+            for (i = 1; i <= changedCount; i++) {
+                if (listItems[i]) {
+                    listItems[i].getHeader().element.setVisibility(true);
+                }
+            }
+        }
+    },
+
+    setItemsCount: function(itemsCount) {
+        var me = this,
+            listItems = me.listItems,
+            minimumHeight = me.getItemMap().getMinimumHeight(),
+            config = {
+                xtype: me.getDefaultType(),
+                itemConfig: me.getItemConfig(),
+                tpl: me.getItemTpl(),
+                minHeight: minimumHeight,
+                cls: me.getItemCls()
+            },
+            info = me.getListItemInfo(),
+            i, item;
+
+        for (i = 0; i < itemsCount; i++) {
+            // We begin by checking if we already have an item for this length
+            item = listItems[i];
+
+            // If we don't have an item yet at this index then create one
+            if (!item) {
+                item = Ext.factory(config);
+                item.dataview = me;
+                item.$height = minimumHeight;
+                me.container.doAdd(item);
+                listItems.push(item);
+            }
+            item.dataIndex = null;
+            if (info.store) {
+                me.updateListItem(item, i + me.topItemIndex, info);
+            }
+        }
+
+        me.updateScrollerSize();
+    },
+
+    getListItemInfo: function() {
+        var me = this,
+            baseCls = me.getBaseCls();
+
+        return {
+            store: me.getStore(),
+            grouped: me.getGrouped(),
+            baseCls: baseCls,
+            selectedCls: me.getSelectedCls(),
+            headerCls: baseCls + '-header-wrap',
+            footerCls: baseCls + '-footer-wrap',
+            firstCls: baseCls + '-item-first',
+            lastCls: baseCls + '-item-last',
+            itemMap: me.getItemMap(),
+            variableHeights: me.getVariableHeights(),
+            defaultItemHeight: me.getItemHeight()
+        };
+    },
+
+    updateListItem: function(item, index, info) {
+        var record = info.store.getAt(index);
+        if (this.isSelected(record)) {
+            item.addCls(info.selectedCls);
+        }
+        else {
+            item.removeCls(info.selectedCls);
+        }
+
+        item.removeCls([info.headerCls, info.footerCls, info.firstCls, info.lastCls]);
+        this.replaceItemContent(item, index, info)
+    },
+
+    taskRunner: function() {
+        delete this.intervalId;
+        if (this.scheduledTasks && this.scheduledTasks.length > 0) {
+            var task = this.scheduledTasks.shift();
+            this.doUpdateListItem(task.item, task.index, task.info);
+
+            if (this.scheduledTasks.length === 0 && this.getVariableHeights() && !this.container.getScrollable().getScroller().getTranslatable().isAnimating) {
+                this.refreshScroller();
+            } else if (this.scheduledTasks.length > 0) {
+                this.intervalId = requestAnimationFrame(Ext.Function.bind(this.taskRunner, this));
+            }
+        }
+    },
+
+    scheduledTasks: null,
+
+    replaceItemContent: function(item, index, info) {
+        var translatable = this.container.getScrollable().getScroller().getTranslatable();
+
+        // This falls apart when scrolling up. Turning off for now.
+        if (Ext.os.is.Android4
+            && !Ext.browser.is.Chrome
+            && !info.variableHeights
+            && !info.grouped
+            && translatable.isAnimating
+            && translatable.activeEasingY
+            && Math.abs(translatable.activeEasingY._startVelocity) > .75) {
+            if (!this.scheduledTasks) {
+                this.scheduledTasks = [];
+            }
+            for (var i = 0; i < this.scheduledTasks.length; i++) {
+                if (this.scheduledTasks[i].item === item) {
+                    Ext.Array.remove(this.scheduledTasks, this.scheduledTasks[i]);
+                    break;
+                }
+            }
+            this.scheduledTasks.push({
+                item: item,
+                index: index,
+                info: info
+            });
+
+            if (!this.intervalId) {
+                this.intervalId = requestAnimationFrame(Ext.Function.bind(this.taskRunner, this));
+            }
+        } else {
+            this.doUpdateListItem(item, index, info);
+        }
+    },
+
+    doUpdateListItem: function(item, index, info) {
+        var record = info.store.getAt(index),
+            headerIndices = this.headerIndices,
+            footerIndices = this.footerIndices,
+            headerItem = item.getHeader(),
+            scrollDockItems = this.scrollDockItems,
+            updatedItems = this.updatedItems,
+            itemHeight = info.itemMap.getItemHeight(index),
+            ln, i, scrollDockItem;
+
+        if (!record) {
+            item.setRecord(null);
+            item.translate(0, -10000);
+            item._list_hidden = true;
+            return;
+        }
+        item._list_hidden = false;
+
+        if (item.isFirst && scrollDockItems.top.length) {
+            for (i = 0, ln = scrollDockItems.top.length; i < ln; i++) {
+                scrollDockItem = scrollDockItems.top[i];
+                scrollDockItem.addCls(Ext.baseCSSPrefix + 'list-scrolldock-hidden');
+                item.remove(scrollDockItem, false);
+            }
+            item.isFirst = false;
+        }
+
+        if (item.isLast && scrollDockItems.bottom.length) {
+            for (i = 0, ln = scrollDockItems.bottom.length; i < ln; i++) {
+                scrollDockItem = scrollDockItems.bottom[i];
+                scrollDockItem.addCls(Ext.baseCSSPrefix + 'list-scrolldock-hidden');
+                item.remove(scrollDockItem, false);
+            }
+            item.isLast = false;
+        }
+
+        if (item.getRecord) {
+            if (item.dataIndex !== index) {
+                item.dataIndex = index;
+                this.fireEvent('itemindexchange', this, record, index, item);
+            }
+            if (item.getRecord() === record) {
+                item.updateRecord(record);
+            } else {
+                item.setRecord(record);
+            }
+        }
+
+        if (this.isSelected(record)) {
+            item.addCls(info.selectedCls);
+        }
+        else {
+            item.removeCls(info.selectedCls);
+        }
+
+        item.removeCls([info.headerCls, info.footerCls, info.firstCls, info.lastCls]);
+
+        if (info.grouped) {
+            if (headerIndices[index]) {
+                item.addCls(info.headerCls);
+                headerItem.setHtml(info.store.getGroupString(record));
+                headerItem.show();
+                headerItem.element.setVisibility(true);
+
+                // If this record is a group header, and the items height is still the default height
+                // we need to read the actual size of the item (including the header)
+                if (!info.variableHeights && itemHeight === info.defaultItemHeight) {
+                    Ext.Array.include(updatedItems, item);
+                }
+            }
+            else {
+                headerItem.hide();
+
+                // If this record is not a header (anymore) and its height is unequal to the default item height
+                // it means the item must have gotten a different height because being a header before and now needs
+                // to become the default height again
+                if (!info.variableHeights && !footerIndices[index] && itemHeight !== info.defaultItemHeight) {
+                    info.itemMap.setItemHeight(index, info.defaultItemHeight);
+                    info.itemMap.update();
+                }
+            }
+
+            if (footerIndices[index]) {
+                item.addCls(info.footerCls);
+
+                // If this record is a footer and its height is still the same as the default item height, we have
+                // to make sure to read this items height to see if adding the foot cls effects its height
+                if (!info.variableHeights && itemHeight === info.defaultItemHeight) {
+                    Ext.Array.include(updatedItems, item);
+                }
+            }
+        } else if (!info.variableHeights && itemHeight !== info.defaultItemHeight) {
+            // If this list is not grouped, the only thing that can change the height of an item
+            // can be scroll dock items. If an items height is not equal to the default item height
+            // it means it must have had scroll dock items. In this case we set the items height
+            // to become the default height again.
+            info.itemMap.setItemHeight(index, info.defaultItemHeight);
+            info.itemMap.update();
+        }
+
+        if (index === 0) {
+            item.isFirst = true;
+            item.addCls(info.firstCls);
+
+            if (!info.grouped) {
+                item.addCls(info.headerCls);
+            }
+
+            for (i = 0, ln = scrollDockItems.top.length; i < ln; i++) {
+                scrollDockItem = scrollDockItems.top[i];
+                item.insert(0, scrollDockItem);
+                scrollDockItem.removeCls(Ext.baseCSSPrefix + 'list-scrolldock-hidden');
+            }
+
+            // If an item gets scrolldock items inside of it, we need to always read the height
+            // in the next frame so we add it to the updatedItems array
+            if (ln && !info.variableHeights) {
+                Ext.Array.include(updatedItems, item);
+            }
+        }
+
+        if (index === info.store.getCount() - 1) {
+            item.isLast = true;
+            item.addCls(info.lastCls);
+
+            if (!info.grouped) {
+                item.addCls(info.footerCls);
+            }
+
+            for (i = 0, ln = scrollDockItems.bottom.length; i < ln; i++) {
+                scrollDockItem = scrollDockItems.bottom[i];
+                item.insert(0, scrollDockItem);
+                scrollDockItem.removeCls(Ext.baseCSSPrefix + 'list-scrolldock-hidden');
+            }
+
+            // If an item gets scrolldock items inside of it, we need to always read the height
+            // in the next frame so we add it to the updatedItems array
+            if (ln && !info.variableHeights) {
+                Ext.Array.include(updatedItems, item);
+            }
+        }
+
+        item.$height = info.itemMap.getItemHeight(index);
+
+        if (info.variableHeights) {
+            updatedItems.push(item);
+        }
+    },
+
+    updateItemHeights: function() {
+        if (!this.isPainted()) {
+            this.pendingHeightUpdate = true;
+            if (!this.pendingHeightUpdate) {
+                this.on('painted', this.updateItemHeights, this, {single: true});
+            }
+            return;
+        }
+
+        var updatedItems = this.updatedItems,
+            ln = updatedItems.length,
+            itemMap = this.getItemMap(),
+            scroller = this.container.getScrollable().getScroller(),
+            minimumHeight = itemMap.getMinimumHeight(),
+            headerIndices = this.headerIndices,
+            headerMap = this.headerMap,
+            translatable = scroller.getTranslatable(),
+            itemIndex, i, item, height;
+
+        this.pendingHeightUpdate = false;
+
+        // First we do all the reads
+        for (i = 0; i < ln; i++) {
+            item = updatedItems[i];
+            itemIndex = item.dataIndex;
+            // itemIndex may not be set yet if the store is still being loaded
+            if (itemIndex !== null) {
+                height = item.element.getFirstChild().getHeight();
+                height = Math.max(height, minimumHeight);
+
+                if (headerIndices && !this.headerHeight && headerIndices[itemIndex]) {
+                    this.headerHeight = parseInt(item.getHeader().element.getHeight(), 10);
+                }
+
+                itemMap.setItemHeight(itemIndex, height);
+            }
+        }
+
+        itemMap.update();
+        height = itemMap.getTotalHeight();
+
+        headerMap.length = 0;
+        for (i in headerIndices) {
+            headerMap.push(itemMap.map[i]);
+        }
+
+        // Now do the dom writes
+        for (i = 0; i < ln; i++) {
+            item = updatedItems[i];
+            itemIndex = item.dataIndex;
+            item.$height = itemMap.getItemHeight(itemIndex);
+        }
+
+        if (height != scroller.givenSize) {
+            scroller.setSize(height);
+            scroller.refreshMaxPosition();
+
+            if (translatable.isAnimating) {
+                translatable.activeEasingY.setMinMomentumValue(-scroller.getMaxPosition().y);
+            }
+        }
+
+        this.updatedItems.length = 0;
+
+    },
+
+    /**
+     * Returns an item at the specified index.
+     * @param {Number} index Index of the item.
+     * @return {Ext.dom.Element/Ext.dataview.component.DataItem} item Item at the specified index.
+     */
+    getItemAt: function(index) {
+        var listItems = this.listItems,
+            ln = listItems.length,
+            i, listItem;
+
+        for (i = 0; i < ln; i++) {
+            listItem = listItems[i];
+            if (listItem.dataIndex === index) {
+                return listItem;
+            }
+        }
+    },
+
+    /**
+     * Returns an index for the specified item.
+     * @param {Number} item The item to locate.
+     * @return {Number} Index for the specified item.
+     */
+    getItemIndex: function(item) {
+        var index = item.dataIndex;
+        return (index === -1) ? index : this.indexOffset + index;
+    },
+
+    /**
+     * Returns an array of the current items in the DataView.
+     * @return {Ext.dom.Element[]/Ext.dataview.component.DataItem[]} Array of Items.
+     */
+    getViewItems: function() {
+        return this.listItems;
+    },
+
+    doRefresh: function(list) {
+        if (this.intervalId) {
+            cancelAnimationFrame(this.intervalId);
+            delete this.intervalId;
+        }
+        if (this.scheduledTasks) {
+            this.scheduledTasks.length = 0;
+        }
+        var me = this,
+            store = me.getStore(),
+            scrollable = me.container.getScrollable(),
+            scroller = scrollable && scrollable.getScroller(),
+            painted = me.isPainted(),
+            storeCount = store.getCount();
+
+        me.getItemMap().populate(storeCount, this.topItemPosition);
+
+        if (me.getGrouped()) {
+            me.findGroupHeaderIndices();
+        }
+
+        // This will refresh the items on the screen with the new data
+        if (me.listItems.length) {
+            me.setItemsCount(me.listItems.length);
+            if (painted) {
+                me.refreshScroller(scroller);
+            }
+        }
+
+        if (painted && this.getScrollToTopOnRefresh() && scroller && list) {
+            scroller.scrollToTop();
+        }
+
+        // No items, hide all the items from the collection.
+        if (storeCount < 1) {
+            me.onStoreClear();
+            return;
+        } else {
+            me.hideEmptyText();
+        }
+    },
+
+    findGroupHeaderIndices: function() {
+        var me = this,
+            store = me.getStore(),
+            storeLn = store.getCount(),
+            groups = store.getGroups(),
+            groupLn = groups.length,
+            headerIndices = me.headerIndices = {},
+            footerIndices = me.footerIndices = {},
+            i, previousIndex, firstGroupedRecord, storeIndex;
+
+        me.groups = groups;
+
+        for (i = 0; i < groupLn; i++) {
+            firstGroupedRecord = groups[i].children[0];
+            storeIndex = store.indexOf(firstGroupedRecord);
+            headerIndices[storeIndex] = true;
+
+            previousIndex = storeIndex - 1;
+            if (previousIndex) {
+                footerIndices[previousIndex] = true;
+            }
+        }
+
+        footerIndices[storeLn - 1] = true;
+
+        return headerIndices;
+    },
+
+    // Handling adds and removes like this is fine for now. It should not perform much slower then a dedicated solution
+    onStoreAdd: function() {
+        this.doRefresh();
+    },
+
+    onStoreRemove: function() {
+        this.doRefresh();
+    },
+
+    onStoreUpdate: function(store, record, newIndex, oldIndex) {
+        var me = this,
+            scroller = me.container.getScrollable().getScroller(),
+            item;
+
+        oldIndex = (typeof oldIndex === 'undefined') ? newIndex : oldIndex;
+
+        if (oldIndex !== newIndex) {
+            // Just refreshing the list here saves a lot of code and shouldnt be much slower
+            me.doRefresh();
+        }
+        else {
+            if (newIndex >= me.topItemIndex && newIndex < me.topItemIndex + me.listItems.length) {
+                item = me.getItemAt(newIndex);
+                me.doUpdateListItem(item, newIndex, me.getListItemInfo());
+
+                // Bypassing setter because sometimes we pass the same record (different data)
+                //me.updateListItem(me.getItemAt(newIndex), newIndex, me.getListItemInfo());
+                if (me.getVariableHeights() && me.getRefreshHeightOnUpdate()) {
+                    me.updatedItems.push(item);
+                    me.updateItemHeights();
+                    me.refreshScroller(scroller);
+                }
+            }
+        }
+    },
+
+    /*
+     * @private
+     * This is to fix the variable heights again since the item height might have changed after the update
+     */
+
+    refreshScroller: function(scroller) {
+        if (!scroller) {
+            scroller = this.container.getScrollable().getScroller()
+        }
+        scroller.scrollTo(0, scroller.position.y + 1);
+        scroller.scrollTo(0, scroller.position.y - 1);
+    },
+
+    onStoreClear: function() {
+        if (this.headerTranslate) {
+            this.headerTranslate.translate(0, -10000);
+        }
+        this.showEmptyText();
+    },
+
+    onIndex: function(indexBar, index) {
+        var me = this,
+            key = index.toLowerCase(),
+            store = me.getStore(),
+            groups = store.getGroups(),
+            ln = groups.length,
+            scrollable = me.container.getScrollable(),
+            scroller, group, i, closest, id;
+
+        if (scrollable) {
+            scroller = scrollable.getScroller();
+        }
+        else {
+            return;
+        }
+
+        for (i = 0; i < ln; i++) {
+            group = groups[i];
+            id = group.name.toLowerCase();
+            if (id == key || id > key) {
+                closest = group;
+                break;
+            }
+            else {
+                closest = group;
+            }
+        }
+
+        if (scrollable && closest) {
+            index = store.indexOf(closest.children[0]);
+
+            //stop the scroller from scrolling
+            scroller.stopAnimation();
+
+            //make sure the new offsetTop is not out of bounds for the scroller
+            var containerSize = scroller.getContainerSize().y,
+                size = scroller.getSize().y,
+                maxOffset = size - containerSize,
+                offsetTop = me.getItemMap().map[index],
+                offset = (offsetTop > maxOffset) ? maxOffset : offsetTop;
+
+            // This is kind of hacky, but since there might be variable heights we have to render the frame
+            // twice. First to update all the content, then to read the heights and translate items accordingly
+            scroller.scrollTo(0, offset);
+            if (this.updatedItems.length > 0 && (!this.scheduledTasks || this.scheduledTasks.length === 0)) {
+                this.refreshScroller();
+            }
+            //scroller.scrollTo(0, offset);
+        }
+    },
+
+    applyOnItemDisclosure: function(config) {
+        if (Ext.isFunction(config)) {
+            return {
+                scope: this,
+                handler: config
+            };
+        }
+        return config;
+    },
+
+    handleItemDisclosure: function(e) {
+        var me = this,
+            item = Ext.getCmp(Ext.get(e.getTarget()).up('.x-list-item').id),
+            index = item.dataIndex,
+            record = me.getStore().getAt(index);
+
+        me.fireAction('disclose', [me, record, item, index, e], 'doDisclose');
+    },
+
+    doDisclose: function(me, record, item, index, e) {
+        var onItemDisclosure = me.getOnItemDisclosure();
+
+        if (onItemDisclosure && onItemDisclosure.handler) {
+            onItemDisclosure.handler.call(onItemDisclosure.scope || me, record, item, index, e);
+        }
+    },
+
+    updateItemCls: function(newCls, oldCls) {
+        var items = this.listItems,
+            ln = items.length,
+            i, item;
+
+        for (i = 0; i < ln; i++) {
+            item = items[i];
+            item.removeCls(oldCls);
+            item.addCls(newCls);
+        }
+    },
+
+    onItemTouchStart: function(e) {
+        this.container.innerElement.on({
+            touchmove: 'onItemTouchMove',
+            delegate: '.' + Ext.baseCSSPrefix + 'list-item-body',
+            single: true,
+            scope: this
+        });
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemTouchMove: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemTouchEnd: function(e) {
+        this.container.innerElement.un({
+            touchmove: 'onItemTouchMove',
+            delegate: '.' + Ext.baseCSSPrefix + 'list-item-body',
+            scope: this
+        });
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemTap: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemTapHold: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemSingleTap: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemDoubleTap: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    onItemSwipe: function(e) {
+        this.callParent(this.parseEvent(e));
+    },
+
+    parseEvent: function(e) {
+        var me = this,
+            target = Ext.fly(e.getTarget()).findParent('.' + Ext.baseCSSPrefix + 'list-item', 8),
+            item = Ext.getCmp(target.id);
+
+        return [me, item, item.dataIndex, e];
+    },
+
+    onItemAdd: function(item) {
+        var me = this,
+            config = item.config;
+
+        if (config.scrollDock) {
+            if (config.scrollDock == 'bottom') {
+                me.scrollDockItems.bottom.push(item);
+            } else {
+                me.scrollDockItems.top.push(item);
+            }
+            item.addCls(Ext.baseCSSPrefix + 'list-scrolldock-hidden');
+            if (me.container) {
+                me.container.add(item);
+            }
+        } else {
+            me.callParent(arguments);
+        }
+    },
+
+    destroy: function() {
+        Ext.destroy(this.getIndexBar(), this.indexBarElement, this.header);
+        if (this.intervalId) {
+            cancelAnimationFrame(this.intervalId);
+            delete this.intervalId;
+        }
+        this.callParent();
+    }
+});
+
 // Using @mixins to include all members of Ext.event.Touch
 // into here to keep documentation simpler
 /**
@@ -56988,7 +61056,7 @@ Ext.define('Ext.viewport.Viewport', {
 /*
  * File: app/controller/CalendarController.js
  *
- * This file was generated by Sencha Architect version 2.1.0.
+ * This file was generated by Sencha Architect version 2.2.0.
  * http://www.sencha.com/products/architect/
  *
  * This file requires use of the Sencha Touch 2.1.x library, under independent license.
@@ -57010,13 +61078,20 @@ Ext.define('ClanRainbow.controller.CalendarController', {
 
         control: {
             "#calendarView": {
-                activate: 'onContainerActivate'
+                activate: 'onCalendarViewActivate'
+            },
+            "#agendaView": {
+                activate: 'onAgendaViewActivate'
             }
         }
     },
 
-    onContainerActivate: function(container, newActiveItem, oldActiveItem, options) {
+    onCalendarViewActivate: function(container, newActiveItem, oldActiveItem, eOpts) {
         this.initCalendarView();
+    },
+
+    onAgendaViewActivate: function(container, newActiveItem, oldActiveItem, eOpts) {
+        this.initAgendaView();
     },
 
     init: function(application) {
@@ -57031,14 +61106,92 @@ Ext.define('ClanRainbow.controller.CalendarController', {
         var viewHeight = calendarView.element.getHeight()!==0?calendarView.element.getHeight():document.height -60; 
         calendarHtml = this.calendarTpl.apply({width:viewWidth,height:viewHeight});
         calendarView.setHtml(calendarHtml);
+    },
+
+    initAgendaView: function() {
+        var evtStore=Ext.StoreManager.lookup('EventStore');
+        if(evtStore.getCount()===0){
+            evtStore.load();
+        }
     }
 
 });
 
 /*
+ * File: app/model/Event.js
+ *
+ * This file was generated by Sencha Architect version 2.2.0.
+ * http://www.sencha.com/products/architect/
+ *
+ * This file requires use of the Sencha Touch 2.1.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.1.x. For more
+ * details see http://www.sencha.com/license or contact license@sencha.com.
+ *
+ * This file will be auto-generated each and everytime you save your project.
+ *
+ * Do NOT hand edit this file.
+ */
+
+Ext.define('ClanRainbow.model.Event', {
+    extend: 'Ext.data.Model',
+
+    config: {
+        fields: [
+            {
+                name: 'title'
+            },
+            {
+                name: 'description'
+            },
+            {
+                name: 'startDate'
+            },
+            {
+                name: 'endDate'
+            }
+        ]
+    }
+});
+
+/*
+ * File: app/store/EventStore.js
+ *
+ * This file was generated by Sencha Architect version 2.2.0.
+ * http://www.sencha.com/products/architect/
+ *
+ * This file requires use of the Sencha Touch 2.1.x library, under independent license.
+ * License of Sencha Architect does not include license for Sencha Touch 2.1.x. For more
+ * details see http://www.sencha.com/license or contact license@sencha.com.
+ *
+ * This file will be auto-generated each and everytime you save your project.
+ *
+ * Do NOT hand edit this file.
+ */
+
+Ext.define('ClanRainbow.store.EventStore', {
+    extend: 'Ext.data.Store',
+
+    requires: [
+        'ClanRainbow.model.Event'
+    ],
+
+    config: {
+        model: 'ClanRainbow.model.Event',
+        storeId: 'EventStore',
+        proxy: {
+            type: 'ajax',
+            url: 'http://emanbucblog.appspot.com/calendar/eventlist',
+            reader: {
+                type: 'json'
+            }
+        }
+    }
+});
+
+/*
  * File: app/view/MyTabPanel.js
  *
- * This file was generated by Sencha Architect version 2.1.0.
+ * This file was generated by Sencha Architect version 2.2.0.
  * http://www.sencha.com/products/architect/
  *
  * This file requires use of the Sencha Touch 2.1.x library, under independent license.
@@ -57185,6 +61338,26 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
                 iconCls: 'time',
                 html: '<iframe src="https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome" style=" border-width:0 " frameborder="0" scrolling="no"></iframe>',
                 id: 'calendarView'
+            },
+            {
+                xtype: 'container',
+                title: 'Agenda',
+                iconCls: 'time',
+                id: 'agendaView',
+                layout: {
+                    type: 'fit'
+                },
+                items: [
+                    {
+                        xtype: 'list',
+                        itemTpl: [
+                            '<div>{title} Start:{startDate} - End:{endDate}</div>',
+                            '<div>{description}</div>',
+                            ''
+                        ],
+                        store: 'EventStore'
+                    }
+                ]
             }
         ],
         tabBar: {
@@ -57197,7 +61370,7 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
 /*
  * File: app.js
  *
- * This file was generated by Sencha Architect version 2.1.0.
+ * This file was generated by Sencha Architect version 2.2.0.
  * http://www.sencha.com/products/architect/
  *
  * This file requires use of the Sencha Touch 2.1.x library, under independent license.
@@ -57210,22 +61383,30 @@ Ext.define('ClanRainbow.view.MyTabPanel', {
  */
 
 Ext.Loader.setConfig({
-    enabled: true
+
 });
 
 Ext.application({
 
     requires: [
         'Ext.carousel.Carousel',
-        'Ext.Label'
+        'Ext.Label',
+        'Ext.dataview.List',
+        'Ext.Panel'
+    ],
+    models: [
+        'Event'
+    ],
+    stores: [
+        'EventStore'
     ],
     views: [
         'MyTabPanel'
     ],
-    name: 'ClanRainbow',
     controllers: [
         'CalendarController'
     ],
+    name: 'ClanRainbow',
 
     launch: function() {
         //this.getController('CalendarController').initCalendarView();

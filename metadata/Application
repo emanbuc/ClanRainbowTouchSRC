@@ -1,24 +1,31 @@
 {
-    "type": "application",
+    "type": "Ext.app.Application",
     "reference": {
         "name": "items",
         "type": "array"
     },
     "codeClass": null,
     "userConfig": {
-        "requires": [
-            "Ext.carousel.Carousel",
-            "Ext.Label"
+        "models": [
+            "Event"
+        ],
+        "stores": [
+            "EventStore"
         ],
         "views": [
             "MyTabPanel"
         ],
-        "name": "ClanRainbow",
+        "requires": [
+            "Ext.carousel.Carousel",
+            "Ext.Label",
+            "Ext.dataview.List",
+            "Ext.Panel"
+        ],
         "controllers": [
             "CalendarController"
-        ]
+        ],
+        "name": "ClanRainbow"
     },
-    "id": "ExtBox1-ext-gen1580",
     "designerId": "application",
     "cn": [
         {

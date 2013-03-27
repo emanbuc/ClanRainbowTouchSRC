@@ -1,5 +1,5 @@
 {
-    "type": "controller",
+    "type": "Ext.app.Controller",
     "reference": {
         "name": "items",
         "type": "array"
@@ -8,7 +8,6 @@
     "userConfig": {
         "designer|userClassName": "CalendarController"
     },
-    "id": "ExtBox1-ext-gen18028",
     "designerId": "b6a6817e-9e7e-4f3b-9a39-5b10c7aa6ec4",
     "cn": [
         {
@@ -74,8 +73,8 @@
             },
             "codeClass": null,
             "userConfig": {
-                "designer|userClassName": "onContainerActivate",
-                "fn": "onContainerActivate",
+                "designer|userClassName": "onCalendarViewActivate",
+                "fn": "onCalendarViewActivate",
                 "implHandler": [
                     "this.initCalendarView();"
                 ],
@@ -84,6 +83,44 @@
                 "designer|controlQuery": "#calendarView"
             },
             "designerId": "e91c979b-9743-4d88-86ec-c7bb8fa4d204"
+        },
+        {
+            "type": "controlleraction",
+            "reference": {
+                "name": "listeners",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "designer|userClassName": "onAgendaViewActivate",
+                "fn": "onAgendaViewActivate",
+                "implHandler": [
+                    "this.initAgendaView();"
+                ],
+                "name": "activate",
+                "designer|targetType": "Ext.Container",
+                "designer|controlQuery": "#agendaView"
+            },
+            "designerId": "d1e289dd-b6a0-4b37-8016-b89886d9c420"
+        },
+        {
+            "type": "basicfunction",
+            "reference": {
+                "name": "items",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "designer|userClassName": "initAgendaView",
+                "fn": "initAgendaView",
+                "implHandler": [
+                    "var evtStore=Ext.StoreManager.lookup('EventStore');\r",
+                    "if(evtStore.getCount()===0){\r",
+                    "    evtStore.load();\r",
+                    "}"
+                ]
+            },
+            "designerId": "bf286b6b-9549-4978-aee0-73f84779f102"
         }
     ]
 }

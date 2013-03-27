@@ -1,5 +1,5 @@
 {
-    "type": "tabpanel",
+    "type": "Ext.tab.Panel",
     "reference": {
         "name": "items",
         "type": "array"
@@ -10,11 +10,10 @@
         "designer|userClassName": "MyTabPanel",
         "designer|initialView": true
     },
-    "id": "ExtBox1-ext-gen4369",
     "designerId": "2c802176-fc04-4535-a744-ab948f20486a",
     "cn": [
         {
-            "type": "container",
+            "type": "Ext.Container",
             "reference": {
                 "name": "items",
                 "type": "array"
@@ -23,14 +22,14 @@
             "userConfig": {
                 "title": "Il Clan",
                 "iconCls": "team",
-                "designer|userClassName": "MyContainer2",
                 "html": null,
+                "designer|userClassName": "MyContainer2",
                 "layout": "fit"
             },
             "designerId": "e6ac2657-339b-4e6f-be0d-487929f818a4",
             "cn": [
                 {
-                    "type": "carousel",
+                    "type": "Ext.carousel.Carousel",
                     "reference": {
                         "name": "items",
                         "type": "array"
@@ -42,48 +41,48 @@
                     "designerId": "17af1a26-c54f-4292-9ef2-a10b022b36ad",
                     "cn": [
                         {
-                            "type": "container",
+                            "type": "Ext.Container",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
                             },
                             "codeClass": null,
                             "userConfig": {
-                                "designer|userClassName": "MyContainer3",
-                                "html": "IL CLAN PAGINA 1"
+                                "html": "IL CLAN PAGINA 1",
+                                "designer|userClassName": "MyContainer3"
                             },
                             "designerId": "a410fd50-573b-4bde-b5d8-3fe08330908d"
                         },
                         {
-                            "type": "container",
+                            "type": "Ext.Container",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
                             },
                             "codeClass": null,
                             "userConfig": {
-                                "designer|userClassName": "MyContainer4",
-                                "html": "IL CLAN PAGINA 2"
+                                "html": "IL CLAN PAGINA 2",
+                                "designer|userClassName": "MyContainer4"
                             },
                             "designerId": "5f72c913-4e3f-48ba-984a-0158e8ad0e95"
                         }
                     ]
                 },
                 {
-                    "type": "toolbar",
+                    "type": "Ext.Toolbar",
                     "reference": {
                         "name": "items",
                         "type": "array"
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "designer|userClassName": "MyToolbar",
-                        "docked": "top"
+                        "docked": "top",
+                        "designer|userClassName": "MyToolbar"
                     },
                     "designerId": "ba55d427-cb93-4693-b91e-9f677977c595",
                     "cn": [
                         {
-                            "type": "button",
+                            "type": "Ext.Button",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -98,7 +97,7 @@
                             "designerId": "7ed2a4c1-4674-40a9-a741-5e90f8b64ec6"
                         },
                         {
-                            "type": "spacer",
+                            "type": "Ext.Spacer",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -110,20 +109,20 @@
                             "designerId": "996051ab-f622-44bc-b559-7df00c0db046"
                         },
                         {
-                            "type": "label",
+                            "type": "Ext.Label",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
                             },
                             "codeClass": null,
                             "userConfig": {
-                                "designer|userClassName": "MyLabel",
-                                "html": "IL CLAN"
+                                "html": "IL CLAN",
+                                "designer|userClassName": "MyLabel"
                             },
                             "designerId": "5c65ebc7-f967-45c9-82e1-05d674de014a"
                         },
                         {
-                            "type": "spacer",
+                            "type": "Ext.Spacer",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -135,7 +134,7 @@
                             "designerId": "894df24a-78c1-48d3-9a0b-c74fa9f9fbdd"
                         },
                         {
-                            "type": "button",
+                            "type": "Ext.Button",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -155,7 +154,7 @@
             ]
         },
         {
-            "type": "container",
+            "type": "Ext.Container",
             "reference": {
                 "name": "items",
                 "type": "array"
@@ -164,26 +163,26 @@
             "userConfig": {
                 "title": "Carta di Clan",
                 "iconCls": "bookmarks",
-                "designer|userClassName": "MyContainer",
-                "html": "carta di clan"
+                "html": "carta di clan",
+                "designer|userClassName": "MyContainer"
             },
             "designerId": "d4d90e4f-3396-4905-9db2-ff4716839080",
             "cn": [
                 {
-                    "type": "toolbar",
+                    "type": "Ext.Toolbar",
                     "reference": {
                         "name": "items",
                         "type": "array"
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "designer|userClassName": "MyToolbar",
-                        "docked": "top"
+                        "docked": "top",
+                        "designer|userClassName": "MyToolbar"
                     },
                     "designerId": "40bd7f56-2ac4-4ac6-8eb1-867a1c17194a",
                     "cn": [
                         {
-                            "type": "spacer",
+                            "type": "Ext.Spacer",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -195,20 +194,20 @@
                             "designerId": "25009709-cb94-48b6-a946-40b94fbf0a66"
                         },
                         {
-                            "type": "label",
+                            "type": "Ext.Label",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
                             },
                             "codeClass": null,
                             "userConfig": {
-                                "designer|userClassName": "MyLabel",
-                                "html": "CARTA DI CLAN"
+                                "html": "CARTA DI CLAN",
+                                "designer|userClassName": "MyLabel"
                             },
                             "designerId": "2434fd26-73f8-43ae-b0e0-feaee948095f"
                         },
                         {
-                            "type": "spacer",
+                            "type": "Ext.Spacer",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -224,7 +223,7 @@
             ]
         },
         {
-            "type": "panel",
+            "type": "Ext.Panel",
             "reference": {
                 "name": "items",
                 "type": "array"
@@ -238,20 +237,20 @@
             "designerId": "aeb24341-602a-479f-9ab1-bf25e2587d54",
             "cn": [
                 {
-                    "type": "toolbar",
+                    "type": "Ext.Toolbar",
                     "reference": {
                         "name": "items",
                         "type": "array"
                     },
                     "codeClass": null,
                     "userConfig": {
-                        "designer|userClassName": "MyToolbar",
-                        "docked": "top"
+                        "docked": "top",
+                        "designer|userClassName": "MyToolbar"
                     },
                     "designerId": "6901acf5-949b-42a1-9142-458a89e64a12",
                     "cn": [
                         {
-                            "type": "button",
+                            "type": "Ext.Button",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -266,7 +265,7 @@
                             "designerId": "44d33805-4b37-43a4-9314-ae440a592de6"
                         },
                         {
-                            "type": "spacer",
+                            "type": "Ext.Spacer",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -278,20 +277,20 @@
                             "designerId": "558988d7-c774-4a4f-858f-b37949edae0d"
                         },
                         {
-                            "type": "label",
+                            "type": "Ext.Label",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
                             },
                             "codeClass": null,
                             "userConfig": {
-                                "designer|userClassName": "MyLabel",
-                                "html": "Lavoro e Futuro"
+                                "html": "Lavoro e Futuro",
+                                "designer|userClassName": "MyLabel"
                             },
                             "designerId": "2fa5918f-ab9f-4232-9bfc-49e08db26976"
                         },
                         {
-                            "type": "spacer",
+                            "type": "Ext.Spacer",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -303,7 +302,7 @@
                             "designerId": "744c33e3-1068-4e62-8d77-9fad2cabafe4"
                         },
                         {
-                            "type": "button",
+                            "type": "Ext.Button",
                             "reference": {
                                 "name": "items",
                                 "type": "array"
@@ -321,7 +320,7 @@
                     ]
                 },
                 {
-                    "type": "container",
+                    "type": "Ext.Container",
                     "reference": {
                         "name": "items",
                         "type": "array"
@@ -333,7 +332,7 @@
                     "designerId": "419c5fff-6cd2-40b3-bdb9-51e4730cfa54"
                 },
                 {
-                    "type": "container",
+                    "type": "Ext.Container",
                     "reference": {
                         "name": "items",
                         "type": "array"
@@ -345,7 +344,7 @@
                     "designerId": "73404d82-88c7-436b-afe2-a24870060ea3"
                 },
                 {
-                    "type": "container",
+                    "type": "Ext.Container",
                     "reference": {
                         "name": "items",
                         "type": "array"
@@ -357,7 +356,7 @@
                     "designerId": "8664a568-bfff-4c64-af16-a21d769e8986"
                 },
                 {
-                    "type": "container",
+                    "type": "Ext.Container",
                     "reference": {
                         "name": "items",
                         "type": "array"
@@ -369,7 +368,7 @@
                     "designerId": "47b445b7-371c-4298-8835-813f9f427b70"
                 },
                 {
-                    "type": "container",
+                    "type": "Ext.Container",
                     "reference": {
                         "name": "items",
                         "type": "array"
@@ -383,7 +382,7 @@
             ]
         },
         {
-            "type": "container",
+            "type": "Ext.Container",
             "reference": {
                 "name": "items",
                 "type": "array"
@@ -392,23 +391,74 @@
             "userConfig": {
                 "title": "Calendario",
                 "iconCls": "time",
-                "designer|userClassName": "MyContainer1",
                 "html": "<iframe src=\"https://www.google.com/calendar/embed?showTitle=0&amp;showPrint=0&amp;showTz=0&amp;height=200&amp;wkst=1&amp;bgcolor=%23ffffff&amp;src=ousovf39nb78d68aaammf5dnqk%40group.calendar.google.com&amp;color=%23A32929&amp;ctz=Europe%2FRome\" style=\" border-width:0 \" frameborder=\"0\" scrolling=\"no\"></iframe>",
                 "id": "calendarView",
+                "designer|userClassName": "MyContainer1",
                 "scrollable": null
             },
             "designerId": "fdf5d37e-a4bb-4ce9-ad27-55cc614f38c0"
         },
         {
-            "type": "tabbar",
+            "type": "Ext.Container",
+            "reference": {
+                "name": "items",
+                "type": "array"
+            },
+            "codeClass": null,
+            "userConfig": {
+                "title": "Agenda",
+                "iconCls": "time",
+                "id": "agendaView",
+                "designer|userClassName": "MyContainer10",
+                "layout": "fit"
+            },
+            "designerId": "6f6064e2-ef49-4a9a-ba68-43e19ae9887b",
+            "cn": [
+                {
+                    "type": "Ext.dataview.List",
+                    "reference": {
+                        "name": "items",
+                        "type": "array"
+                    },
+                    "codeClass": null,
+                    "userConfig": {
+                        "designer|userClassName": "MyList",
+                        "store": "EventStore"
+                    },
+                    "designerId": "18a4153f-e3c2-4253-8542-448261ec77e6",
+                    "cn": [
+                        {
+                            "type": "Ext.XTemplate",
+                            "reference": {
+                                "name": "itemTpl",
+                                "type": "object"
+                            },
+                            "codeClass": null,
+                            "userConfig": {
+                                "designer|userClassName": "itemTpl",
+                                "implHandler": [
+                                    "<div>{title} Start:{startDate} - End:{endDate}</div>\r",
+                                    "<div>{description}</div>\r",
+                                    ""
+                                ],
+                                "designer|displayName": "itemTpl"
+                            },
+                            "designerId": "67098300-1e7e-455b-8b80-4835e346cd3a"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "type": "Ext.tab.Bar",
             "reference": {
                 "name": "tabBar",
                 "type": "object"
             },
             "codeClass": null,
             "userConfig": {
-                "designer|userClassName": "MyTabBar",
-                "docked": "bottom"
+                "docked": "bottom",
+                "designer|userClassName": "MyTabBar"
             },
             "designerId": "352d7304-f505-4854-bf11-89add20b69ae"
         }
