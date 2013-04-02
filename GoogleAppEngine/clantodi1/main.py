@@ -63,9 +63,9 @@ class BlogHandler(webapp2.RequestHandler):
         uid = self.read_secure_cookie('user_id')
         self.user = uid and User.by_id(int(uid))
 
-def render_post(response, post):
-    response.out.write('<b>' + post.subject + '</b><br>')
-    response.out.write(post.content)
+def render_opportunity(response, opportunity):
+    response.out.write('<b>' + opportunity.subject + '</b><br>')
+    response.out.write(opportunity.content)
 
 class MainPage(BlogHandler):
   def get(self):
@@ -73,6 +73,19 @@ class MainPage(BlogHandler):
 
 
 ##### user stuff
+
+USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
+def valid_username(username):
+    return username and USER_RE.match(username)
+
+PASS_RE = re.compile(r"^.{3,20}$")
+def valid_password(password):
+    return password and PASS_RE.match(password)
+
+EMAIL_RE  = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
+def valid_email(email):
+    return not email or EMAIL_RE.match(email)
+
 def make_salt(length = 5):
     return ''.join(random.choice(letters) for x in xrange(length))
 
@@ -116,7 +129,10 @@ class User(db.Model):
         print 'username '+name
         print 'password '+pw
         u = cls.by_name(name)
-        print 'username utente da validare:'+u.name
+        if(u):
+        	print 'username utente da validare:'+u.name
+        else:
+        	print 'utnete non valido'
         if u and valid_pw(name, pw, u.pw_hash):
             return u
 
@@ -174,7 +190,7 @@ class Login(BlogHandler):
         u = User.login(username, password)
         if u:
             self.login(u)
-            self.redirect('/blog')
+            self.redirect('/lef')
         else:
             msg = 'Invalid login'
             self.render('login-form.html', error = msg)
@@ -182,21 +198,21 @@ class Login(BlogHandler):
 class Logout(BlogHandler):
     def get(self):
         self.logout()
-        self.redirect('/blog')
+        self.redirect('/lef')
 
 ##### EVENTS
 
-def calendarevent_key(name = 'default'):
-    return db.Key.from_path('calendarevent', name)
+def opportunity_key(name = 'default'):
+    return db.Key.from_path('opportunity', name)
     
-class CalendarFront(BlogHandler):
+class OpportunityFront(BlogHandler):
     def get(self):
-        calendarEvents  = CalendarEvent.all().order('-created')
-        self.render('calendarfront.html', calendarEvents = calendarEvents)
+        opportunities  = Opportunity.all().order('-created')
+        self.render('opportunityfront.html', opportunities = opportunities)
 
-class CalendarEventList(BlogHandler):
+class JsonOpportunityList(BlogHandler):
     def get(self):
-        calendarEvents  = CalendarEvent.all().order('-created')
+        calendarEvents  = Opportunity.all().order('-created')
         ##results = calendarEvents.fetch(limit=50)
         result = []
     	for entry in calendarEvents:
@@ -206,84 +222,65 @@ class CalendarEventList(BlogHandler):
         self.response.out.write(json.dumps(result))
         
 
-class CalendarEventPage(BlogHandler):
-    def get(self, ce_id):
-        key = db.Key.from_path('CalendarEvent', int(ce_id), parent=calendarevent_key())
-        ce = db.get(key)
+class OpportunityPage(BlogHandler):
+    def get(self, op_id):
+        key = db.Key.from_path('Opportunity', int(op_id), parent=opportunity_key())
+        op = db.get(key)
 
-        if not ce:
+        if not op:
             self.error(404)
             return
 
-        self.render("calendareventpage.html", ce = ce)
+        self.render('opportunitypage.html', op = op)
         
-class CalendarEvent(db.Model):
+class Opportunity(db.Model):
     title = db.StringProperty(required = True)
     description = db.TextProperty(required = True)
+    author =  db.TextProperty(required = True)
     created = db.DateTimeProperty(auto_now_add = True)
     last_modified = db.DateTimeProperty(auto_now = True)
     startDate = db.DateTimeProperty(required = False)
     endDate = db.DateTimeProperty(required = False)
+    
 
     def render(self):
         self._render_text = self.description.replace('\n', '<br>')
-        return render_str("event.html", ce = self)
+        return render_str("opportunity.html", op = self)
 
-class NewEvent(BlogHandler):
+class NewOpportunity(BlogHandler):
     def get(self):
         if self.user:
-            self.render("newevent.html")
+            self.render("newopportunity.html")
         else:
             self.redirect("/login")
 
     def post(self):
         if not self.user:
-            self.redirect('/calendar')
+            self.redirect('/lef')
 
         title = self.request.get('title')
         description = self.request.get('description')
-        startDate = self.request.get('startDate')
-        endDate = self.request.get('endDate')
+        #startDate = self.request.get('startDate')
+        #startDate=datetime.strptime(startDate, "%Y-%m-%d")
+        #endDate = self.request.get('endDate')
+        #endDate=datetime.strptime(endDate,"%Y-%m-%d")
+        author=self.user.name
 
         if title and description:
-            ce = CalendarEvent(parent = calendarevent_key(), description = description, title = title, startDate=datetime.strptime(startDate, "%Y-%m-%d"), endDate=datetime.strptime(endDate,"%Y-%m-%d"))
-            ce.put()
-            self.redirect('/calendar/%s' % str(ce.key().id()))
+            op = Opportunity(parent = opportunity_key(), description = description,author=author, title = title, startDate=None, endDate=None)
+            op.put()
+            self.redirect('/lef/%s' % str(op.key().id()))
         else:
             error = "title and description, please!"
-            self.render("newevent.html", description = description, title = title, error=error)
+            self.render("newopportunity.html", description = description, title = title, error=error)
 
-
-USER_RE = re.compile(r"^[a-zA-Z0-9_-]{3,20}$")
-def valid_username(username):
-    return username and USER_RE.match(username)
-
-PASS_RE = re.compile(r"^.{3,20}$")
-def valid_password(password):
-    return password and PASS_RE.match(password)
-
-EMAIL_RE  = re.compile(r'^[\S]+@[\S]+\.[\S]+$')
-def valid_email(email):
-    return not email or EMAIL_RE.match(email)
-
-
-class Welcome(BlogHandler):
-    def get(self):
-    	username = self.user
-        if valid_username(username):
-            self.render('welcome.html',username)
-        else:
-            self.redirect('/unit2/signup')
 
 app = webapp2.WSGIApplication([('/', MainPage),
-                               ('/calendar/newevent', NewEvent),
-                               ('/calendar/?', CalendarFront),
-                               ('/calendar/eventlist', CalendarEventList),
-                               ('/calendar/([0-9]+)', CalendarEventPage),
-                               ('/lef/nuovaop', NewEvent),
-                               ('/lef/op', CalendarFront),
-                               ('/lef/oplist', CalendarEventList),
-                               ('/lef/([0-9]+)', CalendarEventPage),
+                               ('/lef/?', OpportunityFront),
+                               ('/lef/([0-9]+)', OpportunityPage),
+                               ('/lef/nuovaop', NewOpportunity),
+                               ('/lef/op', OpportunityFront),
+                               ('/lef/oplist', JsonOpportunityList),
                                ('/signup', Signup),
                                ('/login', Login),
                                ('/logout', Logout)

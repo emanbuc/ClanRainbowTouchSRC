@@ -1,0 +1,10 @@
+{% extends "baseopportunity.html" %}
+
+{% block content %}
+
+  {% for op in opportunities %}
+    {{ op.render() | safe }}
+    <br><br>
+  {% endfor %}
+
+{% endblock %}

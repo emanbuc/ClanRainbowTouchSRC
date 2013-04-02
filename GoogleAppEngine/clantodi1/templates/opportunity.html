@@ -1,0 +1,18 @@
+<div class="opportunity">
+  <div class="opportunity-heading">
+    <div class="post-title">
+      {{op.title}}
+    </div>
+
+    <div class="opportunity-date">
+      Utente: {{op.author}} - Data Inserimento:{{op.created.strftime("%b %d, %Y")}}
+    </div>
+  </div>
+
+  <div class="opportunity-content">
+    {{op._render_text | safe}}
+  </div>
+  <div>
+     <a herf="{{op.link}}">Link</a>
+  </div>
+</div>
